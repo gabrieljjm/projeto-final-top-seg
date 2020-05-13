@@ -1,6 +1,6 @@
 ﻿namespace ProjetoFinalTopSeg
 {
-    partial class Form1
+    partial class FormClient1
     {
         /// <summary>
         /// Required designer variable.

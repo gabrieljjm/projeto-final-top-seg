@@ -10,9 +10,9 @@ using System.Windows.Forms;
 
 namespace ProjetoFinalTopSeg
 {
-    public partial class Form1 : Form
+    public partial class FormClient1 : Form
     {
-        public Form1()
+        public FormClient1()
         {
             InitializeComponent();
         }
