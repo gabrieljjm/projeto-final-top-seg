@@ -8,6 +8,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -19,9 +20,10 @@ namespace Client2
 		NetworkStream networkStream;
 		ProtocolSI protocolSI;
 		TcpClient client;
+		Thread thread;
 
 		public FormClient2()
-        {
+		{
 			InitializeComponent();
 			// CRIAR UM CONJUNTO IP+PORTO DO SERVIDOR
 			IPEndPoint endpoint = new IPEndPoint(IPAddress.Loopback, PORT);
@@ -32,34 +34,48 @@ namespace Client2
 			// OBTER A LIGAÇÃO DO SERVIDOR
 			networkStream = client.GetStream();
 			protocolSI = new ProtocolSI();
-			
+
+			thread = new Thread(threadHandler);
+			thread.Start();
 		}
 
-        private void btEnviar_Click(object sender, EventArgs e)
-        {
+		private void threadHandler()
+		{
+			while (true)
+			{
+				networkStream.Read(protocolSI.Buffer, 0, protocolSI.Buffer.Length);
+				if (protocolSI.GetCmdType() == ProtocolSICmdType.EOF)
+				{
+					break;
+				}
+				if (protocolSI.GetCmdType() == ProtocolSICmdType.DATA)
+				{
+					tbChat.Invoke((Action)delegate
+					{
+						tbChat.AppendText(protocolSI.GetStringFromData() + Environment.NewLine);
+					});
+				}
+			}
+		}
+
+		private void btEnviar_Click(object sender, EventArgs e)
+		{
 			//Enviar mensagem de cliente para servidor
 			string msg = tbMensagem.Text;
 			tbMensagem.Clear();
 			// ProtocolSICmdTyp. - interpreta o tipo de mensagem/pacote recebido
 			// protocolSI.Make() - cria uma mensagem/pacote de um tipo específico
-
 			byte[] packet = protocolSI.Make(ProtocolSICmdType.DATA, msg);
 			// ENVIAR A MENSAGEM PELA LIGAÇÃO
 			networkStream.Write(packet, 0, packet.Length);
-
-			while (protocolSI.GetCmdType() != ProtocolSICmdType.ACK)
-			{
-				//Buffer - propriedade que permite armazenar a mensagem/pacote recebida
-				networkStream.Read(protocolSI.Buffer, 0, protocolSI.Buffer.Length);
-			}
 		}
 
 		private void FormClient2_FormClosing(object sender, FormClosingEventArgs e)
 		{
+			thread.Abort();
 			//EOT - End Of Transmission
 			byte[] eot = protocolSI.Make(ProtocolSICmdType.EOT);
 			networkStream.Write(eot, 0, eot.Length);
-			networkStream.Read(protocolSI.Buffer, 0, protocolSI.Buffer.Length);
 			//Fechar todas as ligações
 			networkStream.Close();
 			client.Close();

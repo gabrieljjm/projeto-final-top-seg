@@ -64,7 +64,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(867, 502);
+            this.ClientSize = new System.Drawing.Size(379, 330);
             this.Controls.Add(this.btEnviar);
             this.Controls.Add(this.tbMensagem);
             this.Controls.Add(this.tbChat);
