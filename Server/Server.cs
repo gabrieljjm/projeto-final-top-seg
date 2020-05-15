@@ -1,6 +1,7 @@
 ﻿using EI.SI;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -14,16 +15,21 @@ namespace Server
 	{
 		private static List<TcpClient> tcpClientsList = new List<TcpClient>();
 		private static List<string> tcpClientsNames = new List<string>();
+		private static string path = $@"log{DateTime.Now.Ticks}.txt";
 
 		private const int PORT = 10000;
 		static void Main(string[] args)
 		{
+			//FILE LOGS
+			
 			// CRIAR UM CONJUNTO IP+PORTO DO CLIEENT
 			IPEndPoint endpoint = new IPEndPoint(IPAddress.Any, PORT);
 			// CRIAR UM TCP LISTENER
 			TcpListener tcplistener = new TcpListener(endpoint);
 			tcplistener.Start();
-			Console.WriteLine("Server started");
+			string msg = "Server started!";
+			File.AppendAllText(path, msg + Environment.NewLine, Encoding.UTF8);
+			Console.WriteLine(msg);
 			while (true)
 			{
 				TcpClient tcpClient = tcplistener.AcceptTcpClient();
@@ -41,7 +47,9 @@ namespace Server
 		{
 			TcpClient tcpClient = (TcpClient)obj;
 			NetworkStream networkStream = tcpClient.GetStream();
-			Console.WriteLine(tcpClientsNames[tcpClientsList.IndexOf(tcpClient)] + " connected");
+			string msg = (tcpClientsNames[tcpClientsList.IndexOf(tcpClient)] + " connected");
+			File.AppendAllText(path, msg + Environment.NewLine, Encoding.UTF8);
+			Console.WriteLine(msg);
 			ProtocolSI protocolSI = new ProtocolSI();
 
 			while (protocolSI.GetCmdType() != ProtocolSICmdType.EOT)
@@ -50,21 +58,23 @@ namespace Server
 
 				if (protocolSI.GetCmdType() == ProtocolSICmdType.DATA)
 				{
-					String message = (tcpClientsNames[tcpClientsList.IndexOf(tcpClient)] + ": " + protocolSI.GetStringFromData());
-					BroadcastMessage(message, tcpClient);
-					Console.WriteLine(message);
+					msg = (tcpClientsNames[tcpClientsList.IndexOf(tcpClient)] + ": " + protocolSI.GetStringFromData());
+					File.AppendAllText(path, msg + Environment.NewLine, Encoding.UTF8);
+					BroadcastMessage(msg, tcpClient);
+					Console.WriteLine(msg);
 				}
 
 				if (protocolSI.GetCmdType() == ProtocolSICmdType.EOT)
 				{
-					String message = (tcpClientsNames[tcpClientsList.IndexOf(tcpClient)] + " disconnected");
-					BroadcastMessage(message, tcpClient);
-					Console.WriteLine(message);
+					msg = (tcpClientsNames[tcpClientsList.IndexOf(tcpClient)] + " disconnected");
+					File.AppendAllText(path, msg + Environment.NewLine, Encoding.UTF8);
+					BroadcastMessage(msg, tcpClient);
+					Console.WriteLine(msg);
 
 					networkStream.Close();
 					tcpClient.Close();
-					tcpClientsList.Remove(tcpClient);
 					tcpClientsNames.RemoveAt(tcpClientsList.IndexOf(tcpClient));
+					tcpClientsList.Remove(tcpClient);
 				}
 			}
 		}
