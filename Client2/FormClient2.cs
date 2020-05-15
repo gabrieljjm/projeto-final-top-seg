@@ -35,6 +35,10 @@ namespace Client2
 			networkStream = client.GetStream();
 			protocolSI = new ProtocolSI();
 
+			string msg = "Username2";
+			byte[] packet = protocolSI.Make(ProtocolSICmdType.DATA, msg);
+			networkStream.Write(packet, 0, packet.Length);
+
 			thread = new Thread(threadHandler);
 			thread.Start();
 		}

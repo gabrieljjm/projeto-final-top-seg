@@ -34,7 +34,11 @@ namespace ProjetoFinalTopSeg
 			// OBTER A LIGAÇÃO DO SERVIDOR
 			networkStream = client.GetStream();
 			protocolSI = new ProtocolSI();
-			
+
+			string msg = "Username1";
+			byte[] packet = protocolSI.Make(ProtocolSICmdType.DATA, msg);
+			networkStream.Write(packet, 0, packet.Length);
+
 			thread = new Thread(threadHandler);
 			thread.Start();
 		}

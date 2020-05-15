@@ -13,6 +13,7 @@ namespace Server
 	class Server
 	{
 		private static List<TcpClient> tcpClientsList = new List<TcpClient>();
+		private static List<string> tcpClientsNames = new List<string>();
 
 		private const int PORT = 10000;
 		static void Main(string[] args)
@@ -27,6 +28,11 @@ namespace Server
 			{
 				TcpClient tcpClient = tcplistener.AcceptTcpClient();
 				tcpClientsList.Add(tcpClient);
+				NetworkStream networkStream = tcpClient.GetStream();
+				ProtocolSI protocolSI = new ProtocolSI();
+				int bytesRead = networkStream.Read(protocolSI.Buffer, 0, protocolSI.Buffer.Length);
+				string name = protocolSI.GetStringFromData();
+				tcpClientsNames.Add(name);
 				Thread thread = new Thread(ClientListener);
 				thread.Start(tcpClient);
 			}
@@ -35,7 +41,7 @@ namespace Server
 		{
 			TcpClient tcpClient = (TcpClient)obj;
 			NetworkStream networkStream = tcpClient.GetStream();
-			Console.WriteLine("Client connected");
+			Console.WriteLine(tcpClientsNames[tcpClientsList.IndexOf(tcpClient)] + " connected");
 			ProtocolSI protocolSI = new ProtocolSI();
 
 			while (protocolSI.GetCmdType() != ProtocolSICmdType.EOT)
@@ -44,20 +50,21 @@ namespace Server
 
 				if (protocolSI.GetCmdType() == ProtocolSICmdType.DATA)
 				{
-					String message = (tcpClient.ToString() + ": " + protocolSI.GetStringFromData());
+					String message = (tcpClientsNames[tcpClientsList.IndexOf(tcpClient)] + ": " + protocolSI.GetStringFromData());
 					BroadcastMessage(message, tcpClient);
 					Console.WriteLine(message);
 				}
 
 				if (protocolSI.GetCmdType() == ProtocolSICmdType.EOT)
 				{
-					String message = (tcpClient.ToString() + " disconnected");
+					String message = (tcpClientsNames[tcpClientsList.IndexOf(tcpClient)] + " disconnected");
 					BroadcastMessage(message, tcpClient);
 					Console.WriteLine(message);
 
 					networkStream.Close();
 					tcpClient.Close();
 					tcpClientsList.Remove(tcpClient);
+					tcpClientsNames.RemoveAt(tcpClientsList.IndexOf(tcpClient));
 				}
 			}
 		}
