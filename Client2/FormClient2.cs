@@ -25,7 +25,7 @@ namespace Client2
 		public FormClient2()
 		{
 			InitializeComponent();
-			// CRIAR UM CONJUNTO IP+PORTO DO SERVIDOR
+			// CRIAR UM CONJUNTO IP+PORTA DO SERVIDOR
 			IPEndPoint endpoint = new IPEndPoint(IPAddress.Loopback, PORT);
 			// CRIAR O CLIENTE TCP
 			client = new TcpClient();
@@ -84,5 +84,5 @@ namespace Client2
 			networkStream.Close();
 			client.Close();
 		}
-	}
+    }
 }

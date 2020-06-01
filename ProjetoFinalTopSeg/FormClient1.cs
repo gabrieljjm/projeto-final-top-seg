@@ -25,7 +25,7 @@ namespace ProjetoFinalTopSeg
 		public FormClient1()
         {
 			InitializeComponent();
-			// CRIAR UM CONJUNTO IP+PORTO DO SERVIDOR
+			// CRIAR UM CONJUNTO IP+PORTA DO SERVIDOR
 			IPEndPoint endpoint = new IPEndPoint(IPAddress.Loopback, PORT);
 			// CRIAR O CLIENTE TCP
 			client = new TcpClient();
@@ -36,7 +36,7 @@ namespace ProjetoFinalTopSeg
 			protocolSI = new ProtocolSI();
 
 			string msg = "Username1";
-			byte[] packet = protocolSI.Make(ProtocolSICmdType.DATA, msg);
+			byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_1, msg);
 			networkStream.Write(packet, 0, packet.Length);
 
 			thread = new Thread(threadHandler);
@@ -69,13 +69,12 @@ namespace ProjetoFinalTopSeg
 			tbMensagem.Clear();
 			// ProtocolSICmdTyp. - interpreta o tipo de mensagem/pacote recebido
 			// protocolSI.Make() - cria uma mensagem/pacote de um tipo específico
-
 			byte[] packet = protocolSI.Make(ProtocolSICmdType.DATA, msg);
 			// ENVIAR A MENSAGEM PELA LIGAÇÃO
 			networkStream.Write(packet, 0, packet.Length);
 		}
 
-		private void FormClient1_FormClosing(object sender, FormClosingEventArgs e)
+        private void FormClient1_FormClosing(object sender, FormClosingEventArgs e)
 		{
 			thread.Abort();
 			//EOT - End Of Transmission
@@ -85,5 +84,22 @@ namespace ProjetoFinalTopSeg
 			networkStream.Close();
 			client.Close();
 		}
-	}
+
+        private void btAutenticar_Click(object sender, EventArgs e)
+        {
+			byte[] opt1 = protocolSI.Make(ProtocolSICmdType.USER_OPTION_1);
+			networkStream.Write(opt1, 0, opt1.Length);
+
+
+
+			//Enviar mensagem de cliente para servidor
+			string msg = tbMensagem.Text;
+			tbMensagem.Clear();
+			// ProtocolSICmdTyp. - interpreta o tipo de mensagem/pacote recebido
+			// protocolSI.Make() - cria uma mensagem/pacote de um tipo específico
+			byte[] packet = protocolSI.Make(ProtocolSICmdType.DATA, msg);
+			// ENVIAR A MENSAGEM PELA LIGAÇÃO
+			networkStream.Write(packet, 0, packet.Length);
+		}
+    }
 }
