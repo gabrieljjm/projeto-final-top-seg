@@ -48,16 +48,19 @@ namespace ProjetoFinalTopSeg
 			while (true)
 			{
 				networkStream.Read(protocolSI.Buffer, 0, protocolSI.Buffer.Length);
-				if (protocolSI.GetCmdType() == ProtocolSICmdType.EOF)
-				{
-					break;
-				}
-				if (protocolSI.GetCmdType() == ProtocolSICmdType.DATA)
-				{
-					tbChat.Invoke((Action)delegate
-					{
-						tbChat.AppendText(protocolSI.GetStringFromData() + Environment.NewLine);
-					});
+                switch (protocolSI.GetCmdType())
+                {
+					case ProtocolSICmdType.EOF:
+						break;
+					case ProtocolSICmdType.DATA:
+						tbChat.Invoke((Action)delegate
+						{
+							tbChat.AppendText(protocolSI.GetStringFromData() + Environment.NewLine);
+						});
+						break;
+					case ProtocolSICmdType.USER_OPTION_1:
+
+						break;
 				}
 			}
 		}
@@ -89,12 +92,9 @@ namespace ProjetoFinalTopSeg
         {
 			byte[] opt1 = protocolSI.Make(ProtocolSICmdType.USER_OPTION_1);
 			networkStream.Write(opt1, 0, opt1.Length);
-
-
-
 			//Enviar mensagem de cliente para servidor
-			string msg = tbMensagem.Text;
-			tbMensagem.Clear();
+			string msg = tbJogador.Text;
+			tbJogador.Clear();
 			// ProtocolSICmdTyp. - interpreta o tipo de mensagem/pacote recebido
 			// protocolSI.Make() - cria uma mensagem/pacote de um tipo específico
 			byte[] packet = protocolSI.Make(ProtocolSICmdType.DATA, msg);
