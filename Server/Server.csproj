@@ -76,7 +76,7 @@
       <DependentUpon>ServerDB.mdf</DependentUpon>
     </Content>
     <Content Include="sqlscript.txt" />
-    <Content Include="UsersCredentials.txt" />
+    <Content Include="private.txt" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.7.2">
