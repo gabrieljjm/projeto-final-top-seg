@@ -28,7 +28,7 @@ namespace Server
 		static void Main(string[] args)
 		{
 			// INSERIR USER NA BASE DE DADOS
-			//InsertUser();
+			InsertUser();
 
 			// CRIAR UM CONJUNTO IP+PORTA DO CLIENTE
 			IPEndPoint endpoint = new IPEndPoint(IPAddress.Any, PORT);
@@ -145,9 +145,9 @@ namespace Server
 			Console.WriteLine(path);
 			// Alterar o finalpath = ""; para o caminho caso o programa não busque o caminho corretamente
 			//string finalpath = path + "\\ServerDB.mdf";
-			string finalpath = @"C:\Users\gaabr\Documents\Git\projeto-final-top-seg\Server\ServerDB.mdf";
+			string finalpath = @"C:\USERS\FJACI\DESKTOP\ESCOLA\2º SEMESTRE\TOPICOS DE SEGURANÇA\GIT\PROJETO-FINAL-TOP-SEG\SERVER\SERVERDB.MDF";
 
-			string username = "Francisco";//Alterar para inserir um username diferente (alterar sempre pois o username é UNIQUE)
+			string username = "Gasbi";//Alterar para inserir um username diferente (alterar sempre pois o username é UNIQUE)
 			string password = "123abc456";//Alterar para inserir uma password diferente
 			byte[] salt = GenerateSalt(SALTSIZE);
 			byte[] saltedPasswordHash = GenerateSaltedHash(password, salt);
