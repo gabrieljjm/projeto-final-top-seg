@@ -16,8 +16,10 @@ namespace Server
 	class Server
 	{
 		private static List<TcpClient> tcpClientList = new List<TcpClient>();
-		private static List<string> tcpNameList = new List<string>();
-		private static List<string> gameList = new List<string>();
+		private static List<string> playerNameList = new List<string>();
+		private static List<string> roomList = new List<string>();
+		private static List<byte[]> privateKeyList = new List<byte[]>();
+		private static int clientCount = 0;
 		private const int SALTSIZE = 8;
 		private const int NUMBER_OF_ITERATIONS = 50000;
 
@@ -26,52 +28,70 @@ namespace Server
 		private const int PORT = 10000;
 		static void Main(string[] args)
 		{
+			// INSERIR USER NA BASE DE DADOS
 			//InsertUser();
-
 			// CRIAR UM CONJUNTO IP+PORTA DO CLIENTE
 			IPEndPoint endpoint = new IPEndPoint(IPAddress.Any, PORT);
 			// CRIAR UM TCP LISTENER
 			TcpListener tcpListener = new TcpListener(endpoint);
 			tcpListener.Start();
-			string msg = "Server started!";
+			string msg = "Server Started!";
 			//File.AppendAllText(path, msg + Environment.NewLine, Encoding.UTF8);
 			Console.WriteLine(msg);
 			while (true)
 			{
 				TcpClient tcpClient = tcpListener.AcceptTcpClient();
 				tcpClientList.Add(tcpClient);
+				int position = tcpClientList.IndexOf(tcpClient);
+
+				AesCryptoServiceProvider aes = new AesCryptoServiceProvider();
+				privateKeyList.Add(aes.Key);
+
+				playerNameList.Add("");
+				roomList.Add("");
+
 				NetworkStream networkStream = tcpClient.GetStream();
 				ProtocolSI protocolSI = new ProtocolSI();
-				int bytesRead = networkStream.Read(protocolSI.Buffer, 0, protocolSI.Buffer.Length);
-				string name = protocolSI.GetStringFromData();
-				tcpNameList.Add(name);
-				Thread thread = new Thread(ClientListener);
-				thread.Start(tcpClient);
+
+				networkStream.Read(protocolSI.Buffer, 0, protocolSI.Buffer.Length);
+
+				string publickey = protocolSI.GetStringFromData();
+
+				RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
+				rsa.FromXmlString(publickey);
+
+				byte[] privatekeyencrypted = rsa.Encrypt(privateKeyList[position], false);
+				byte[] packet = protocolSI.Make(ProtocolSICmdType.DATA, privatekeyencrypted);
+
+				networkStream.Write(packet, 0, packet.Length);
+
+				Thread thread = new Thread(() => ClientListener(position));
+				thread.Start();
 			}
 		}
 
-		public static void ClientListener(object obj)
+		public static void ClientListener(int pos)
 		{
-			TcpClient tcpClient = (TcpClient)obj;
+			TcpClient tcpClient = tcpClientList[pos];
 			NetworkStream networkStream = tcpClient.GetStream();
-			string msg = (tcpNameList[tcpClientList.IndexOf(tcpClient)] + " connected");
+			string msg = (tcpClient.ToString() + " connected");
 			//File.AppendAllText(path, msg + Environment.NewLine, Encoding.UTF8);
 			Console.WriteLine(msg);
 			ProtocolSI protocolSI = new ProtocolSI();
 
 			while (protocolSI.GetCmdType() != ProtocolSICmdType.EOT)
 			{
-                _ = networkStream.Read(protocolSI.Buffer, 0, protocolSI.Buffer.Length);
+                networkStream.Read(protocolSI.Buffer, 0, protocolSI.Buffer.Length);
 
                 switch (protocolSI.GetCmdType())
                 {
 					case ProtocolSICmdType.USER_OPTION_1:
-                        _ = networkStream.Read(protocolSI.Buffer, 0, protocolSI.Buffer.Length);
+                        networkStream.Read(protocolSI.Buffer, 0, protocolSI.Buffer.Length);
                         if (protocolSI.GetCmdType() == ProtocolSICmdType.DATA)
                         {
 							string name = protocolSI.GetStringFromData();
-							msg = (tcpNameList[tcpClientList.IndexOf(tcpClient)] + " - changed name to " + name);
-							tcpNameList[tcpClientList.IndexOf(tcpClient)] = name;
+							msg = (playerNameList[tcpClientList.IndexOf(tcpClient)] + " - changed name to " + name);
+							playerNameList[tcpClientList.IndexOf(tcpClient)] = name;
 							//File.AppendAllText(path, msg + Environment.NewLine, Encoding.UTF8);
 							BroadcastMessage(msg);
 							Console.WriteLine(msg);
@@ -79,20 +99,20 @@ namespace Server
 						break;
 
 					case ProtocolSICmdType.DATA:
-						msg = (tcpNameList[tcpClientList.IndexOf(tcpClient)] + ": " + protocolSI.GetStringFromData());
+						msg = (playerNameList[tcpClientList.IndexOf(tcpClient)] + ": " + protocolSI.GetStringFromData());
 						//File.AppendAllText(path, msg + Environment.NewLine, Encoding.UTF8);
 						BroadcastMessage(msg);
 						Console.WriteLine(msg);
 						break;
 
 					case ProtocolSICmdType.EOT:
-						msg = (tcpNameList[tcpClientList.IndexOf(tcpClient)] + " disconnected");
+						msg = (playerNameList[tcpClientList.IndexOf(tcpClient)] + " disconnected");
 						//File.AppendAllText(path, msg + Environment.NewLine, Encoding.UTF8);
 						BroadcastMessage(msg);
 						Console.WriteLine(msg);
 						networkStream.Close();
 						tcpClient.Close();
-						tcpNameList.RemoveAt(tcpClientList.IndexOf(tcpClient));
+						playerNameList.RemoveAt(tcpClientList.IndexOf(tcpClient));
 						tcpClientList.Remove(tcpClient);
 						break;
 
@@ -111,6 +131,10 @@ namespace Server
 			}
 		}
 
+
+		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 		/// <summary>
 		/// Insert user in database just for testing
 		/// </summary>
@@ -119,10 +143,11 @@ namespace Server
 			string path = Directory.GetCurrentDirectory();
 			DirectoryInfo parentDir = Directory.GetParent(path);
 			Console.WriteLine(path);
-			//Alterar o finalpath = ""; para o caminho caso o programa não busque o caminho corretamente
-			string finalpath = path + "\\ServerDB.mdf";
+			// Alterar o finalpath = ""; para o caminho caso o programa não busque o caminho corretamente
+			//string finalpath = path + "\\ServerDB.mdf";
+			string finalpath = string.Format(@"C:\Users\gaabr\Documents\Git\projeto-final-top-seg\Server\ServerDB.mdf");
 
-			string username = "Gabriel";//Alterar para inserir um username diferente (alterar sempre pois o username é UNIQUE)
+			string username = "Francisco";//Alterar para inserir um username diferente (alterar sempre pois o username é UNIQUE)
 			string password = "123abc456";//Alterar para inserir uma password diferente
 			byte[] salt = GenerateSalt(SALTSIZE);
 			byte[] saltedPasswordHash = GenerateSaltedHash(password, salt);
@@ -165,7 +190,7 @@ namespace Server
 					// Se forem devolvidas 0 linhas alteradas então o não foi executado com sucesso
 					throw new Exception("Erro na inserção do utilizador");
 				}
-				//MessageBox.Show("Registado com sucesso!");
+				Console.WriteLine("Registado com sucesso!");
 			}
 			catch (Exception e)
 			{
