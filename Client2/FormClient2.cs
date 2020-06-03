@@ -24,7 +24,7 @@ namespace Client2
 
 		public FormClient2()
 		{
-			InitializeComponent();
+			InitializeComponent();/*
 			// CRIAR UM CONJUNTO IP+PORTA DO SERVIDOR
 			IPEndPoint endpoint = new IPEndPoint(IPAddress.Loopback, PORT);
 			// CRIAR O CLIENTE TCP
@@ -40,7 +40,7 @@ namespace Client2
 			networkStream.Write(packet, 0, packet.Length);
 
 			thread = new Thread(threadHandler);
-			thread.Start();
+			thread.Start();*/
 		}
 
 		private void threadHandler()

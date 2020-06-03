@@ -228,6 +228,7 @@
             // 
             // btEnviar
             // 
+            this.btEnviar.Enabled = false;
             this.btEnviar.Location = new System.Drawing.Point(463, 311);
             this.btEnviar.Name = "btEnviar";
             this.btEnviar.Size = new System.Drawing.Size(75, 48);
@@ -273,42 +274,34 @@
             // 
             // lbJogador1
             // 
-            this.lbJogador1.AutoSize = true;
             this.lbJogador1.Location = new System.Drawing.Point(110, 284);
             this.lbJogador1.Name = "lbJogador1";
             this.lbJogador1.Size = new System.Drawing.Size(59, 13);
             this.lbJogador1.TabIndex = 28;
-            this.lbJogador1.Text = "lbJogador1";
             this.lbJogador1.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             // 
             // lbJogador2
             // 
-            this.lbJogador2.AutoSize = true;
             this.lbJogador2.Location = new System.Drawing.Point(195, 284);
             this.lbJogador2.Name = "lbJogador2";
             this.lbJogador2.Size = new System.Drawing.Size(59, 13);
             this.lbJogador2.TabIndex = 29;
-            this.lbJogador2.Text = "lbJogador2";
             this.lbJogador2.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             // 
             // lbWins1
             // 
-            this.lbWins1.AutoSize = true;
-            this.lbWins1.Location = new System.Drawing.Point(117, 316);
+            this.lbWins1.Location = new System.Drawing.Point(124, 316);
             this.lbWins1.Name = "lbWins1";
             this.lbWins1.Size = new System.Drawing.Size(45, 13);
             this.lbWins1.TabIndex = 30;
-            this.lbWins1.Text = "lbWins1";
             this.lbWins1.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             // 
             // lbWins2
             // 
-            this.lbWins2.AutoSize = true;
             this.lbWins2.Location = new System.Drawing.Point(202, 316);
             this.lbWins2.Name = "lbWins2";
             this.lbWins2.Size = new System.Drawing.Size(45, 13);
             this.lbWins2.TabIndex = 31;
-            this.lbWins2.Text = "lbWins2";
             this.lbWins2.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             // 
             // label6
