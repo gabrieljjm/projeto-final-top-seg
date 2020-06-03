@@ -16,9 +16,10 @@ namespace Server
 	class Server
 	{
 		private static List<TcpClient> tcpClientList = new List<TcpClient>();
+		private static List<AesCryptoServiceProvider> aesList = new List<AesCryptoServiceProvider>();
 		private static List<string> playerNameList = new List<string>();
 		private static List<string> roomList = new List<string>();
-		private static List<byte[]> privateKeyList = new List<byte[]>();
+
 		private const int SALTSIZE = 8;
 		private const int NUMBER_OF_ITERATIONS = 50000;
 
@@ -46,7 +47,7 @@ namespace Server
 				int position = tcpClientList.IndexOf(tcpClient);
 
 				AesCryptoServiceProvider aes = new AesCryptoServiceProvider();
-				privateKeyList.Add(aes.Key);
+				aesList.Add(aes);
 
 				playerNameList.Add("");
 				roomList.Add("");
@@ -59,9 +60,14 @@ namespace Server
 				RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
 				rsa.FromXmlString(publickey);
 
-				byte[] privatekeyencrypted = rsa.Encrypt(privateKeyList[position], false);
-				byte[] packet = protocolSI.Make(ProtocolSICmdType.DATA, privatekeyencrypted);
+				byte[] packet;
 
+				byte[] symmetrickeyencrypted = rsa.Encrypt(aesList[position].Key, false);
+				packet = protocolSI.Make(ProtocolSICmdType.SECRET_KEY, symmetrickeyencrypted);
+				networkStream.Write(packet, 0, packet.Length);
+				
+				byte[] ivencrypted = rsa.Encrypt(aesList[position].IV, false);
+				packet = protocolSI.Make(ProtocolSICmdType.IV, ivencrypted);
 				networkStream.Write(packet, 0, packet.Length);
 
 				Thread thread = new Thread(() => ClientListener(position));
@@ -86,24 +92,26 @@ namespace Server
                 switch (protocolSI.GetCmdType())
                 {
 					case ProtocolSICmdType.USER_OPTION_1:
-                        networkStream.Read(protocolSI.Buffer, 0, protocolSI.Buffer.Length);
-                        if (protocolSI.GetCmdType() == ProtocolSICmdType.DATA)
-                        {
-							string name = protocolSI.GetStringFromData();
-							msg = (playerNameList[tcpClientList.IndexOf(tcpClient)] + " - changed name to " + name);
-							playerNameList[tcpClientList.IndexOf(tcpClient)] = name;
-							//File.AppendAllText(path, msg + Environment.NewLine, Encoding.UTF8);
-							BroadcastMessage(msg);
-							Console.WriteLine(msg);
-                        }
-						break;
+						string combo = protocolSI.GetStringFromData();
+						string[] arraycombo = combo.Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
 
-					case ProtocolSICmdType.DATA:
-						msg = (playerNameList[tcpClientList.IndexOf(tcpClient)] + ": " + protocolSI.GetStringFromData());
-						//File.AppendAllText(path, msg + Environment.NewLine, Encoding.UTF8);
-						BroadcastMessage(msg);
-						Console.WriteLine(msg);
-						break;
+						//byte[] encryptedroom = Encoding.UTF8.GetBytes(arraycombo[0]);
+						//byte[] encryptedusername = Encoding.UTF8.GetBytes(arraycombo[1]);
+						//byte[] encryptedpwd = Encoding.UTF8.GetBytes(arraycombo[2]);
+
+						/*
+						string encryptedroom = protocolSI.GetStringFromData();
+						networkStream.Read(protocolSI.Buffer, 0, protocolSI.Buffer.Length);
+						string encryptedusername = protocolSI.GetStringFromData();
+						networkStream.Read(protocolSI.Buffer, 0, protocolSI.Buffer.Length);
+						string encryptedpwd = protocolSI.GetStringFromData();*/
+
+						string room = Decrypt(arraycombo[0], pos);
+                        string username = Decrypt(arraycombo[1], pos);
+                        string pwd = Decrypt(arraycombo[2], pos);
+
+
+                        break;
 
 					case ProtocolSICmdType.EOT:
 						msg = (playerNameList[tcpClientList.IndexOf(tcpClient)] + " disconnected");
@@ -129,6 +137,28 @@ namespace Server
 				byte[] packet = protocolSI.Make(ProtocolSICmdType.DATA, msg);
 				networkStream.Write(packet, 0, packet.Length);
 			}
+		}
+
+		public static string Decrypt(string txt, int pos)
+		{
+			AesCryptoServiceProvider aes = aesList[pos];
+			//VARIÁVEL PARA GUARDAR O TEXTO CIFRADO EM BYTES
+			byte[] txtCifrado = Convert.FromBase64String(txt);
+			//RESERVAR ESPAÇO NA MEMÓRIA PARA COLOCAR O TEXTO E CIFRÁ-LO
+			MemoryStream ms = new MemoryStream(txtCifrado);
+			//INICIALIZAR O SISTEMA DE CIFRAGEM (READ)
+			CryptoStream cs = new CryptoStream(ms, aes.CreateDecryptor(), CryptoStreamMode.Read);
+			//VARIÁVEL PARA GUARDAR O TEXTO DECIFRADO
+			byte[] txtDecifrado = new byte[ms.Length];
+			//VARIÁVEL PARA TER O NÚMERO DE BYTES DECIFRADOS
+			int bytesLidos = 0;
+			//DECIFRAR OS DADOS
+			bytesLidos = cs.Read(txtDecifrado, 0, txtDecifrado.Length);
+			cs.Close();
+			//CONVERTER PARA TEXTO
+			string textoDecifrado = Encoding.UTF8.GetString(txtDecifrado, 0, bytesLidos);
+			//DEVOVLER TEXTO DECIFRADO
+			return textoDecifrado;
 		}
 
 

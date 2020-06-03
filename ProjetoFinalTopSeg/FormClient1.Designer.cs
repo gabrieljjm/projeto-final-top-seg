@@ -172,9 +172,9 @@
             this.label1.AutoSize = true;
             this.label1.Location = new System.Drawing.Point(276, 15);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(49, 13);
+            this.label1.Size = new System.Drawing.Size(31, 13);
             this.label1.TabIndex = 16;
-            this.label1.Text = "Servidor:";
+            this.label1.Text = "Sala:";
             // 
             // label2
             // 
@@ -228,7 +228,6 @@
             // 
             // btEnviar
             // 
-            this.btEnviar.Enabled = false;
             this.btEnviar.Location = new System.Drawing.Point(463, 311);
             this.btEnviar.Name = "btEnviar";
             this.btEnviar.Size = new System.Drawing.Size(75, 48);
@@ -318,9 +317,8 @@
             this.lbEmpates.AutoSize = true;
             this.lbEmpates.Location = new System.Drawing.Point(69, 346);
             this.lbEmpates.Name = "lbEmpates";
-            this.lbEmpates.Size = new System.Drawing.Size(56, 13);
+            this.lbEmpates.Size = new System.Drawing.Size(0, 13);
             this.lbEmpates.TabIndex = 33;
-            this.lbEmpates.Text = "lbEmpates";
             // 
             // FormClient1
             // 
