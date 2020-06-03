@@ -19,7 +19,6 @@ namespace Server
 		private static List<string> playerNameList = new List<string>();
 		private static List<string> roomList = new List<string>();
 		private static List<byte[]> privateKeyList = new List<byte[]>();
-		private static int clientCount = 0;
 		private const int SALTSIZE = 8;
 		private const int NUMBER_OF_ITERATIONS = 50000;
 
@@ -30,8 +29,10 @@ namespace Server
 		{
 			// INSERIR USER NA BASE DE DADOS
 			//InsertUser();
+
 			// CRIAR UM CONJUNTO IP+PORTA DO CLIENTE
 			IPEndPoint endpoint = new IPEndPoint(IPAddress.Any, PORT);
+
 			// CRIAR UM TCP LISTENER
 			TcpListener tcpListener = new TcpListener(endpoint);
 			tcpListener.Start();
@@ -52,9 +53,7 @@ namespace Server
 
 				NetworkStream networkStream = tcpClient.GetStream();
 				ProtocolSI protocolSI = new ProtocolSI();
-
 				networkStream.Read(protocolSI.Buffer, 0, protocolSI.Buffer.Length);
-
 				string publickey = protocolSI.GetStringFromData();
 
 				RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
@@ -74,9 +73,10 @@ namespace Server
 		{
 			TcpClient tcpClient = tcpClientList[pos];
 			NetworkStream networkStream = tcpClient.GetStream();
-			string msg = (tcpClient.ToString() + " connected");
+			string msg = ("Client nr" + (pos + 1) + " connected");
 			//File.AppendAllText(path, msg + Environment.NewLine, Encoding.UTF8);
 			Console.WriteLine(msg);
+			Console.WriteLine(pos);
 			ProtocolSI protocolSI = new ProtocolSI();
 
 			while (protocolSI.GetCmdType() != ProtocolSICmdType.EOT)
@@ -145,7 +145,7 @@ namespace Server
 			Console.WriteLine(path);
 			// Alterar o finalpath = ""; para o caminho caso o programa não busque o caminho corretamente
 			//string finalpath = path + "\\ServerDB.mdf";
-			string finalpath = string.Format(@"C:\Users\gaabr\Documents\Git\projeto-final-top-seg\Server\ServerDB.mdf");
+			string finalpath = @"C:\Users\gaabr\Documents\Git\projeto-final-top-seg\Server\ServerDB.mdf";
 
 			string username = "Francisco";//Alterar para inserir um username diferente (alterar sempre pois o username é UNIQUE)
 			string password = "123abc456";//Alterar para inserir uma password diferente
