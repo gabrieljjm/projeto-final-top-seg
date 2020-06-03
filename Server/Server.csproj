@@ -75,6 +75,7 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <DependentUpon>ServerDB.mdf</DependentUpon>
     </Content>
+    <Content Include="sqlscript.txt" />
     <Content Include="UsersCredentials.txt" />
   </ItemGroup>
   <ItemGroup>
