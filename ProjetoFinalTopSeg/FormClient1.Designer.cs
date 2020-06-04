@@ -42,7 +42,7 @@
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
             this.btAutenticar = new System.Windows.Forms.Button();
-            this.tbServidor = new System.Windows.Forms.TextBox();
+            this.tbSala = new System.Windows.Forms.TextBox();
             this.tbJogador = new System.Windows.Forms.TextBox();
             this.tbPassword = new System.Windows.Forms.TextBox();
             this.btEnviar = new System.Windows.Forms.Button();
@@ -72,6 +72,7 @@
             this.panel1.Controls.Add(this.button3);
             this.panel1.Controls.Add(this.button2);
             this.panel1.Controls.Add(this.button1);
+            this.panel1.Enabled = false;
             this.panel1.Location = new System.Drawing.Point(12, 12);
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(258, 258);
@@ -204,12 +205,13 @@
             this.btAutenticar.UseVisualStyleBackColor = true;
             this.btAutenticar.Click += new System.EventHandler(this.btAutenticar_Click);
             // 
-            // tbServidor
+            // tbSala
             // 
-            this.tbServidor.Location = new System.Drawing.Point(367, 12);
-            this.tbServidor.Name = "tbServidor";
-            this.tbServidor.Size = new System.Drawing.Size(171, 20);
-            this.tbServidor.TabIndex = 1;
+            this.tbSala.Enabled = false;
+            this.tbSala.Location = new System.Drawing.Point(367, 12);
+            this.tbSala.Name = "tbSala";
+            this.tbSala.Size = new System.Drawing.Size(171, 20);
+            this.tbSala.TabIndex = 1;
             // 
             // tbJogador
             // 
@@ -228,6 +230,7 @@
             // 
             // btEnviar
             // 
+            this.btEnviar.Enabled = false;
             this.btEnviar.Location = new System.Drawing.Point(463, 311);
             this.btEnviar.Name = "btEnviar";
             this.btEnviar.Size = new System.Drawing.Size(75, 48);
@@ -238,6 +241,7 @@
             // 
             // tbMensagem
             // 
+            this.tbMensagem.Enabled = false;
             this.tbMensagem.Location = new System.Drawing.Point(279, 311);
             this.tbMensagem.Multiline = true;
             this.tbMensagem.Name = "tbMensagem";
@@ -338,7 +342,7 @@
             this.Controls.Add(this.tbChat);
             this.Controls.Add(this.tbPassword);
             this.Controls.Add(this.tbJogador);
-            this.Controls.Add(this.tbServidor);
+            this.Controls.Add(this.tbSala);
             this.Controls.Add(this.btAutenticar);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
@@ -371,7 +375,7 @@
         private System.Windows.Forms.Button button3;
         private System.Windows.Forms.Button button2;
         private System.Windows.Forms.Button button1;
-        private System.Windows.Forms.TextBox tbServidor;
+        private System.Windows.Forms.TextBox tbSala;
         private System.Windows.Forms.TextBox tbJogador;
         private System.Windows.Forms.TextBox tbPassword;
         private System.Windows.Forms.Button btEnviar;

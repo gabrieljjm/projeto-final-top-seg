@@ -24,11 +24,12 @@ namespace ProjetoFinalTopSeg
 		private ProtocolSI protocolSI;
 		private TcpClient client;
 		private Thread thread;
+		private bool autenticated = false;
 
 		public FormClient1()
         {
 			InitializeComponent();
-
+			
 			RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
 			// CRIA CHAVE PUBLICA
 			string publickey = rsa.ToXmlString(false);
@@ -72,7 +73,7 @@ namespace ProjetoFinalTopSeg
                 {
 					case ProtocolSICmdType.EOF:
 						break;
-					case ProtocolSICmdType.DATA:
+					case ProtocolSICmdType.USER_OPTION_3:
                         tbChat.Invoke((Action)delegate
                         {
                             tbChat.AppendText(protocolSI.GetStringFromData() + Environment.NewLine);
@@ -110,18 +111,85 @@ namespace ProjetoFinalTopSeg
 
         private void btAutenticar_Click(object sender, EventArgs e)
         {
-			string encryptedroom = EncryptText(tbServidor.Text);
-			string encryptedusername = EncryptText(tbJogador.Text);
-			string encryptedpwd = EncryptText(tbPassword.Text);
+			tbChat.Text = "";
+            if (!autenticated)
+            {
+				string username = tbJogador.Text;
+				string pwd = tbPassword.Text;
+				
+				string encryptedusername = EncryptText(username);
+				string encryptedpwd = EncryptText(pwd);
 
-			string bytestring = encryptedroom + " " + encryptedusername + " " + encryptedpwd;
-			byte[] packetroom = protocolSI.Make(ProtocolSICmdType.USER_OPTION_1, bytestring);
-			networkStream.Write(packetroom, 0, packetroom.Length);
-			//byte[] packetusername = protocolSI.Make(ProtocolSICmdType.USER_OPTION_1, encryptedusername);
-			//networkStream.Write(packetusername, 0, packetusername.Length);
-			//byte[] packetpwd = protocolSI.Make(ProtocolSICmdType.USER_OPTION_1, encryptedpwd);
-			//networkStream.Write(packetpwd, 0, packetpwd.Length);
+				string bytestring = encryptedusername + " " + encryptedpwd;
+				byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_1, bytestring);
+				networkStream.Write(packet, 0, packet.Length);
+
+				networkStream.Read(protocolSI.Buffer, 0, protocolSI.Buffer.Length);
+				string option = DecryptText(protocolSI.GetStringFromData());
+				switch (option)
+				{
+					case "success":
+						autenticated = true;
+						tbJogador.Enabled = false;
+						tbPassword.Enabled = false;
+						tbSala.Enabled = true;
+						btAutenticar.Text = "Jogar";
+						tbChat.AppendText(string.Format("Autenticação bem sucedida!{0}{0}", Environment.NewLine));
+						break;
+					case "already":
+						tbJogador.Text = "";
+						tbPassword.Text = "";
+						tbChat.AppendText(string.Format("A conta que está a tentar usar está autenticada neste momento noutro PC.{0}{0}", Environment.NewLine));
+						break;
+					case "wrong":
+						tbChat.AppendText(string.Format("Autenticação falhada.{0}As credenciais fornecidas estão erradas.{0}{0}", Environment.NewLine));
+						break;
+				}
+            }
+            else
+            {
+				string room = tbSala.Text;
+
+				string encryptedroom = EncryptText(room);
+				byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_2, encryptedroom);
+				networkStream.Write(packet, 0, packet.Length);
+
+				networkStream.Read(protocolSI.Buffer, 0, protocolSI.Buffer.Length);
+				string option = DecryptText(protocolSI.GetStringFromData());
+				switch (option)
+				{
+					case "empty":
+						tbChat.AppendText(string.Format("Criou a sala {0}!{1}Partilhe o nome da sala para alguém se juntar!{1}{1}", room, Environment.NewLine));
+						break;
+					case "join":
+						tbChat.AppendText(string.Format("Juntou-se à sala {0}!{1}{1}", room, Environment.NewLine));
+						break;
+					case "full":
+						tbChat.AppendText(string.Format("A sala {0} está cheia.{1}Tente outra sala ou espere que esta fique vazia!{1}{1}", room, Environment.NewLine));
+						break;
+				}
+			}
         }
+
+		public string DecryptText(string txt)
+		{
+			//VARIÁVEL PARA GUARDAR O TEXTO CIFRADO EM BYTES
+			byte[] txtCifrado = Convert.FromBase64String(txt);
+			//RESERVAR ESPAÇO NA MEMÓRIA PARA COLOCAR O TEXTO E CIFRÁ-LO
+			MemoryStream ms = new MemoryStream(txtCifrado);
+			//INICIALIZAR O SISTEMA DE CIFRAGEM (READ)
+			CryptoStream cs = new CryptoStream(ms, aes.CreateDecryptor(), CryptoStreamMode.Read);
+			//VARIÁVEL PARA GUARDAR O TEXTO DECIFRADO
+			byte[] txtDecifrado = new byte[ms.Length];
+			//VARIÁVEL PARA TER O NÚMERO DE BYTES DECIFRADOS
+			//DECIFRAR OS DADOS
+			int bytesLidos = cs.Read(txtDecifrado, 0, txtDecifrado.Length);
+			cs.Close();
+			//CONVERTER PARA TEXTO
+			string textoDecifrado = Encoding.UTF8.GetString(txtDecifrado, 0, bytesLidos);
+			//DEVOVLER TEXTO DECIFRADO
+			return textoDecifrado;
+		}
 
 		private string EncryptText(string text)
         {

@@ -15,10 +15,12 @@ namespace Server
 {
 	class Server
 	{
-		private static List<TcpClient> tcpClientList = new List<TcpClient>();
-		private static List<AesCryptoServiceProvider> aesList = new List<AesCryptoServiceProvider>();
-		private static List<string> playerNameList = new List<string>();
-		private static List<string> roomList = new List<string>();
+		private static List<TcpClient> ListTcpClient = new List<TcpClient>();
+		private static List<AesCryptoServiceProvider> ListAes = new List<AesCryptoServiceProvider>();
+		private static List<string> ListPlayerName = new List<string>();
+		private static List<string> ListRoom = new List<string>();
+		private static bool loginqueue = false;
+		private static bool roomqueue = false;
 
 		private const int SALTSIZE = 8;
 		private const int NUMBER_OF_ITERATIONS = 50000;
@@ -43,14 +45,14 @@ namespace Server
 			while (true)
 			{
 				TcpClient tcpClient = tcpListener.AcceptTcpClient();
-				tcpClientList.Add(tcpClient);
-				int position = tcpClientList.IndexOf(tcpClient);
+				ListTcpClient.Add(tcpClient);
+				int position = ListTcpClient.IndexOf(tcpClient);
 
 				AesCryptoServiceProvider aes = new AesCryptoServiceProvider();
-				aesList.Add(aes);
+				ListAes.Add(aes);
 
-				playerNameList.Add("");
-				roomList.Add("");
+				ListPlayerName.Add("");
+				ListRoom.Add("");
 
 				NetworkStream networkStream = tcpClient.GetStream();
 				ProtocolSI protocolSI = new ProtocolSI();
@@ -62,11 +64,11 @@ namespace Server
 
 				byte[] packet;
 
-				byte[] symmetrickeyencrypted = rsa.Encrypt(aesList[position].Key, false);
+				byte[] symmetrickeyencrypted = rsa.Encrypt(ListAes[position].Key, false);
 				packet = protocolSI.Make(ProtocolSICmdType.SECRET_KEY, symmetrickeyencrypted);
 				networkStream.Write(packet, 0, packet.Length);
 				
-				byte[] ivencrypted = rsa.Encrypt(aesList[position].IV, false);
+				byte[] ivencrypted = rsa.Encrypt(ListAes[position].IV, false);
 				packet = protocolSI.Make(ProtocolSICmdType.IV, ivencrypted);
 				networkStream.Write(packet, 0, packet.Length);
 
@@ -77,7 +79,7 @@ namespace Server
 
 		public static void ClientListener(int pos)
 		{
-			TcpClient tcpClient = tcpClientList[pos];
+			TcpClient tcpClient = ListTcpClient[pos];
 			NetworkStream networkStream = tcpClient.GetStream();
 			string msg = ("Client nr" + (pos + 1) + " connected");
 			//File.AppendAllText(path, msg + Environment.NewLine, Encoding.UTF8);
@@ -94,54 +96,122 @@ namespace Server
 					case ProtocolSICmdType.USER_OPTION_1:
 						string combo = protocolSI.GetStringFromData();
 						string[] arraycombo = combo.Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+						//string room = Decrypt(arraycombo[0], pos);
+                        string username = DecryptText(arraycombo[0], pos);
+                        string pwd = DecryptText(arraycombo[1], pos);
 
-						//byte[] encryptedroom = Encoding.UTF8.GetBytes(arraycombo[0]);
-						//byte[] encryptedusername = Encoding.UTF8.GetBytes(arraycombo[1]);
-						//byte[] encryptedpwd = Encoding.UTF8.GetBytes(arraycombo[2]);
+						string codword;
+						if (VerifyLogin(username, pwd))
+						{
+							while (loginqueue) { }
+							loginqueue = true;
+							if (!ListPlayerName.Contains(username))
+							{
+								// user autenticado
+								ListPlayerName[pos] = username;
+								loginqueue = false;
+								codword = EncryptText("success", pos);
+								byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_1, codword);
+								networkStream.Write(packet, 0, packet.Length);
+							}
+							else
+							{
+								// user já foi logado noutro client
+								loginqueue = false;
+								codword = EncryptText("already", pos);
+								byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_1, codword);
+								networkStream.Write(packet, 0, packet.Length);
+							}
+						}
+						else
+						{
+							// login errado
+							codword = EncryptText("wrong", pos);
+							byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_1, codword);
+							networkStream.Write(packet, 0, packet.Length);
+						}
+						break;
 
-						/*
-						string encryptedroom = protocolSI.GetStringFromData();
-						networkStream.Read(protocolSI.Buffer, 0, protocolSI.Buffer.Length);
-						string encryptedusername = protocolSI.GetStringFromData();
-						networkStream.Read(protocolSI.Buffer, 0, protocolSI.Buffer.Length);
-						string encryptedpwd = protocolSI.GetStringFromData();*/
+					case ProtocolSICmdType.USER_OPTION_2:
+						string room = DecryptText(protocolSI.GetStringFromData(), pos);
 
-						string room = Decrypt(arraycombo[0], pos);
-                        string username = Decrypt(arraycombo[1], pos);
-                        string pwd = Decrypt(arraycombo[2], pos);
-
-
-                        break;
-
+						while (roomqueue) { }
+						roomqueue = true;
+						ListRoom[pos] = "";
+						int count = 0;
+						foreach (var rm in ListRoom)
+						{
+							if (rm.Equals(room))
+							{
+								count++;
+							}
+						}
+						if (count == 0)
+						{
+							// user cria uma sala
+							ListRoom[pos] = room;
+							roomqueue = false;
+							codword = EncryptText("empty", pos);
+							byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_2, codword);
+							networkStream.Write(packet, 0, packet.Length);
+							msg = ListPlayerName[pos] + " criou a sala " + room;
+							BroadcastMessageRoom(msg, room);
+						}
+						else
+						{
+							if (count == 1)
+							{
+								// user junta-se a uma sala
+								ListRoom[pos] = room;
+								roomqueue = false;
+								codword = EncryptText("join", pos);
+								byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_2, codword);
+								networkStream.Write(packet, 0, packet.Length);
+								msg = ListPlayerName[pos] + " juntou-se à sala " + room;
+								BroadcastMessageRoom(msg, room);
+							}
+							else
+							{
+								// a sala está cheia
+								roomqueue = false;
+								codword = EncryptText("full", pos);
+								byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_2, codword);
+								networkStream.Write(packet, 0, packet.Length);
+							}
+						}
+						break;
 					case ProtocolSICmdType.EOT:
-						msg = (playerNameList[tcpClientList.IndexOf(tcpClient)] + " disconnected");
+						codword = (ListPlayerName[ListTcpClient.IndexOf(tcpClient)] + " disconnected");
 						//File.AppendAllText(path, msg + Environment.NewLine, Encoding.UTF8);
-						BroadcastMessage(msg);
-						Console.WriteLine(msg);
+						//BroadcastMessage(codword, room);
+						Console.WriteLine(codword);
 						networkStream.Close();
 						tcpClient.Close();
-						playerNameList.RemoveAt(tcpClientList.IndexOf(tcpClient));
-						tcpClientList.Remove(tcpClient);
+						ListPlayerName.RemoveAt(ListTcpClient.IndexOf(tcpClient));
+						ListTcpClient.Remove(tcpClient);
 						break;
 
 				}
 			}
 		}
 
-		public static void BroadcastMessage(string msg)
+		public static void BroadcastMessageRoom(string msg ,string room)
 		{
-			foreach (TcpClient client in tcpClientList)
-			{
-				NetworkStream networkStream = client.GetStream();
-				ProtocolSI protocolSI = new ProtocolSI();
-				byte[] packet = protocolSI.Make(ProtocolSICmdType.DATA, msg);
-				networkStream.Write(packet, 0, packet.Length);
-			}
+            for (int i = 0; i < ListRoom.Count(); i++)
+            {
+                if (ListRoom[i].Equals(room))
+                {
+					NetworkStream networkStream = ListTcpClient[i].GetStream();
+					ProtocolSI protocolSI = new ProtocolSI();
+					byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_2, msg);
+					networkStream.Write(packet, 0, packet.Length);
+				}
+            }
 		}
 
-		public static string Decrypt(string txt, int pos)
+		public static string DecryptText(string txt, int pos)
 		{
-			AesCryptoServiceProvider aes = aesList[pos];
+			AesCryptoServiceProvider aes = ListAes[pos];
 			//VARIÁVEL PARA GUARDAR O TEXTO CIFRADO EM BYTES
 			byte[] txtCifrado = Convert.FromBase64String(txt);
 			//RESERVAR ESPAÇO NA MEMÓRIA PARA COLOCAR O TEXTO E CIFRÁ-LO
@@ -151,9 +221,8 @@ namespace Server
 			//VARIÁVEL PARA GUARDAR O TEXTO DECIFRADO
 			byte[] txtDecifrado = new byte[ms.Length];
 			//VARIÁVEL PARA TER O NÚMERO DE BYTES DECIFRADOS
-			int bytesLidos = 0;
 			//DECIFRAR OS DADOS
-			bytesLidos = cs.Read(txtDecifrado, 0, txtDecifrado.Length);
+			int bytesLidos = cs.Read(txtDecifrado, 0, txtDecifrado.Length);
 			cs.Close();
 			//CONVERTER PARA TEXTO
 			string textoDecifrado = Encoding.UTF8.GetString(txtDecifrado, 0, bytesLidos);
@@ -161,6 +230,83 @@ namespace Server
 			return textoDecifrado;
 		}
 
+		private static string EncryptText(string text, int pos)
+		{
+			AesCryptoServiceProvider aes = ListAes[pos];
+			//VARIÁVEL PARA GUARDAR O TEXTO DECIFRADO EM BYTES
+			byte[] txtDecifrado = Encoding.UTF8.GetBytes(text);
+			//VARIÁVEL PARA GUARDAR O TEXTO CIFRADO EM BYTES
+			byte[] txtCifrado;
+			//RESERVARA ESPAÇO NA MEMÓRIA PARA COLOCAR O TEXTO E CIFRÁ-LO
+			MemoryStream ms = new MemoryStream();
+			//INICIALIZAR O SISTEMA DE CIFRAGEM (WRITE)
+			CryptoStream cs = new CryptoStream(ms, aes.CreateEncryptor(), CryptoStreamMode.Write); ;
+			//CIFRAR OS DADOS
+			cs.Write(txtDecifrado, 0, txtDecifrado.Length);
+			cs.Close();
+			//GUARDAR OS DADOS CIFRADO QUE ESTÃO NA MEMÓRIA
+			txtCifrado = ms.ToArray();
+			//CONVERTER OS BYTES PARA BASE64 (TEXTO)
+			string txtCifradoB64 = Convert.ToBase64String(txtCifrado);
+			//DEVOLVER OS BYTES CRIADOS EM BASE64
+			return txtCifradoB64;
+		}
+
+		public static bool VerifyLogin(string username, string password)
+		{
+			try
+			{
+				// Configurar ligação à Base de Dados
+				SqlConnection conn = new SqlConnection();
+				conn.ConnectionString = String.Format(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename='C:\Users\gaabr\Documents\Git\projeto-final-top-seg\Server\ServerDB.mdf';Integrated Security=True");
+				//conn.ConnectionString = Properties.Settings.Default.connectionString;
+
+				// Abrir ligação à Base de Dados
+				conn.Open();
+
+				// Declaração do comando SQL
+				String sql = "SELECT * FROM Users WHERE Username = @username";
+				SqlCommand cmd = new SqlCommand();
+				cmd.CommandText = sql;
+
+				// Declaração dos parâmetros do comando SQL
+				SqlParameter param = new SqlParameter("@username", username);
+
+				// Introduzir valor ao parâmentro registado no comando SQL
+				cmd.Parameters.Add(param);
+
+				// Associar ligação à Base de Dados ao comando a ser executado
+				cmd.Connection = conn;
+
+				// Executar comando SQL
+				SqlDataReader reader = cmd.ExecuteReader();
+
+				if (!reader.HasRows)
+				{
+					throw new Exception("Erro no acesso ao utilizador!");
+				}
+
+				// Ler resultado da pesquisa
+				reader.Read();
+
+				// Obter Hash (password + salt)
+				byte[] saltedPasswordHashStored = (byte[])reader["SaltedPasswordHash"];
+
+				// Obter salt
+				byte[] saltStored = (byte[])reader["Salt"];
+
+				conn.Close();
+
+				byte[] hash = GenerateSaltedHash(password, saltStored);
+
+				return saltedPasswordHashStored.SequenceEqual(hash);
+			}
+			catch
+			{
+				Console.WriteLine("Um erro ocorreu");
+				return false;
+			}
+		}
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

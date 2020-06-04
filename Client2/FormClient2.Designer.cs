@@ -41,7 +41,7 @@
             this.tbChat = new System.Windows.Forms.TextBox();
             this.tbPassword = new System.Windows.Forms.TextBox();
             this.tbJogador = new System.Windows.Forms.TextBox();
-            this.tbServidor = new System.Windows.Forms.TextBox();
+            this.tbSala = new System.Windows.Forms.TextBox();
             this.btAutenticar = new System.Windows.Forms.Button();
             this.label3 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
@@ -64,9 +64,8 @@
             this.lbEmpates.AutoSize = true;
             this.lbEmpates.Location = new System.Drawing.Point(69, 346);
             this.lbEmpates.Name = "lbEmpates";
-            this.lbEmpates.Size = new System.Drawing.Size(56, 13);
+            this.lbEmpates.Size = new System.Drawing.Size(0, 13);
             this.lbEmpates.TabIndex = 52;
-            this.lbEmpates.Text = "lbEmpates";
             // 
             // label6
             // 
@@ -79,42 +78,34 @@
             // 
             // lbWins2
             // 
-            this.lbWins2.AutoSize = true;
             this.lbWins2.Location = new System.Drawing.Point(202, 316);
             this.lbWins2.Name = "lbWins2";
             this.lbWins2.Size = new System.Drawing.Size(45, 13);
             this.lbWins2.TabIndex = 50;
-            this.lbWins2.Text = "lbWins2";
             this.lbWins2.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             // 
             // lbWins1
             // 
-            this.lbWins1.AutoSize = true;
-            this.lbWins1.Location = new System.Drawing.Point(117, 316);
+            this.lbWins1.Location = new System.Drawing.Point(124, 316);
             this.lbWins1.Name = "lbWins1";
             this.lbWins1.Size = new System.Drawing.Size(45, 13);
             this.lbWins1.TabIndex = 49;
-            this.lbWins1.Text = "lbWins1";
             this.lbWins1.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             // 
             // lbJogador2
             // 
-            this.lbJogador2.AutoSize = true;
             this.lbJogador2.Location = new System.Drawing.Point(195, 284);
             this.lbJogador2.Name = "lbJogador2";
             this.lbJogador2.Size = new System.Drawing.Size(59, 13);
             this.lbJogador2.TabIndex = 48;
-            this.lbJogador2.Text = "lbJogador2";
             this.lbJogador2.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             // 
             // lbJogador1
             // 
-            this.lbJogador1.AutoSize = true;
             this.lbJogador1.Location = new System.Drawing.Point(110, 284);
             this.lbJogador1.Name = "lbJogador1";
             this.lbJogador1.Size = new System.Drawing.Size(59, 13);
             this.lbJogador1.TabIndex = 47;
-            this.lbJogador1.Text = "lbJogador1";
             this.lbJogador1.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             // 
             // label5
@@ -137,21 +128,23 @@
             // 
             // btEnviar
             // 
+            this.btEnviar.Enabled = false;
             this.btEnviar.Location = new System.Drawing.Point(463, 311);
             this.btEnviar.Name = "btEnviar";
             this.btEnviar.Size = new System.Drawing.Size(75, 48);
-            this.btEnviar.TabIndex = 7;
+            this.btEnviar.TabIndex = 41;
             this.btEnviar.Text = "Enviar";
             this.btEnviar.UseVisualStyleBackColor = true;
             this.btEnviar.Click += new System.EventHandler(this.btEnviar_Click);
             // 
             // tbMensagem
             // 
+            this.tbMensagem.Enabled = false;
             this.tbMensagem.Location = new System.Drawing.Point(279, 311);
             this.tbMensagem.Multiline = true;
             this.tbMensagem.Name = "tbMensagem";
             this.tbMensagem.Size = new System.Drawing.Size(178, 48);
-            this.tbMensagem.TabIndex = 6;
+            this.tbMensagem.TabIndex = 40;
             // 
             // tbChat
             // 
@@ -160,14 +153,14 @@
             this.tbChat.Name = "tbChat";
             this.tbChat.ReadOnly = true;
             this.tbChat.Size = new System.Drawing.Size(259, 186);
-            this.tbChat.TabIndex = 5;
+            this.tbChat.TabIndex = 39;
             // 
             // tbPassword
             // 
             this.tbPassword.Location = new System.Drawing.Point(367, 64);
             this.tbPassword.Name = "tbPassword";
             this.tbPassword.Size = new System.Drawing.Size(171, 20);
-            this.tbPassword.TabIndex = 3;
+            this.tbPassword.TabIndex = 37;
             this.tbPassword.UseSystemPasswordChar = true;
             // 
             // tbJogador
@@ -175,23 +168,25 @@
             this.tbJogador.Location = new System.Drawing.Point(367, 38);
             this.tbJogador.Name = "tbJogador";
             this.tbJogador.Size = new System.Drawing.Size(171, 20);
-            this.tbJogador.TabIndex = 2;
+            this.tbJogador.TabIndex = 36;
             // 
-            // tbServidor
+            // tbSala
             // 
-            this.tbServidor.Location = new System.Drawing.Point(367, 12);
-            this.tbServidor.Name = "tbServidor";
-            this.tbServidor.Size = new System.Drawing.Size(171, 20);
-            this.tbServidor.TabIndex = 1;
+            this.tbSala.Enabled = false;
+            this.tbSala.Location = new System.Drawing.Point(367, 12);
+            this.tbSala.Name = "tbSala";
+            this.tbSala.Size = new System.Drawing.Size(171, 20);
+            this.tbSala.TabIndex = 35;
             // 
             // btAutenticar
             // 
             this.btAutenticar.Location = new System.Drawing.Point(279, 90);
             this.btAutenticar.Name = "btAutenticar";
             this.btAutenticar.Size = new System.Drawing.Size(259, 23);
-            this.btAutenticar.TabIndex = 4;
+            this.btAutenticar.TabIndex = 38;
             this.btAutenticar.Text = "Autenticar";
             this.btAutenticar.UseVisualStyleBackColor = true;
+            this.btAutenticar.Click += new System.EventHandler(this.btAutenticar_Click);
             // 
             // label3
             // 
@@ -199,7 +194,7 @@
             this.label3.Location = new System.Drawing.Point(276, 67);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(56, 13);
-            this.label3.TabIndex = 37;
+            this.label3.TabIndex = 44;
             this.label3.Text = "Password:";
             // 
             // label2
@@ -208,7 +203,7 @@
             this.label2.Location = new System.Drawing.Point(276, 41);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(48, 13);
-            this.label2.TabIndex = 36;
+            this.label2.TabIndex = 43;
             this.label2.Text = "Jogador:";
             // 
             // label1
@@ -216,9 +211,9 @@
             this.label1.AutoSize = true;
             this.label1.Location = new System.Drawing.Point(276, 15);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(49, 13);
-            this.label1.TabIndex = 35;
-            this.label1.Text = "Servidor:";
+            this.label1.Size = new System.Drawing.Size(31, 13);
+            this.label1.TabIndex = 42;
+            this.label1.Text = "Sala:";
             // 
             // panel1
             // 
@@ -233,10 +228,11 @@
             this.panel1.Controls.Add(this.button3);
             this.panel1.Controls.Add(this.button2);
             this.panel1.Controls.Add(this.button1);
+            this.panel1.Enabled = false;
             this.panel1.Location = new System.Drawing.Point(12, 12);
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(258, 258);
-            this.panel1.TabIndex = 0;
+            this.panel1.TabIndex = 34;
             // 
             // button9
             // 
@@ -346,7 +342,7 @@
             this.Controls.Add(this.tbChat);
             this.Controls.Add(this.tbPassword);
             this.Controls.Add(this.tbJogador);
-            this.Controls.Add(this.tbServidor);
+            this.Controls.Add(this.tbSala);
             this.Controls.Add(this.btAutenticar);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
@@ -378,7 +374,7 @@
         private System.Windows.Forms.TextBox tbChat;
         private System.Windows.Forms.TextBox tbPassword;
         private System.Windows.Forms.TextBox tbJogador;
-        private System.Windows.Forms.TextBox tbServidor;
+        private System.Windows.Forms.TextBox tbSala;
         private System.Windows.Forms.Button btAutenticar;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.Label label2;
