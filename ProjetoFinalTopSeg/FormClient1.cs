@@ -7,6 +7,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Configuration;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
@@ -60,8 +61,8 @@ namespace ProjetoFinalTopSeg
 			aes.Key = symmetrickey;
 			aes.IV = iv;
 
-			//thread = new Thread(ServerListener);
-			//thread.Start();
+			thread = new Thread(ServerListener);
+			thread.Start();
 		}
 
 		private void ServerListener()
@@ -69,109 +70,216 @@ namespace ProjetoFinalTopSeg
 			while (true)
 			{
 				networkStream.Read(protocolSI.Buffer, 0, protocolSI.Buffer.Length);
-                switch (protocolSI.GetCmdType())
-                {
+				switch (protocolSI.GetCmdType())
+				{
 					case ProtocolSICmdType.EOF:
 						break;
-					case ProtocolSICmdType.USER_OPTION_3:
-                        tbChat.Invoke((Action)delegate
-                        {
-                            tbChat.AppendText(protocolSI.GetStringFromData() + Environment.NewLine);
-                        });
-						break;
 					case ProtocolSICmdType.USER_OPTION_1:
-
+						if (true)
+                        {
+							string option = DecryptText(protocolSI.GetStringFromData());
+							UserOption1(option);
+                        }
+						break;
+					case ProtocolSICmdType.USER_OPTION_2:
+                        if (true)
+                        {
+							string option = DecryptText(protocolSI.GetStringFromData());
+							UserOption2(option);
+                        }
+						break;
+					case ProtocolSICmdType.USER_OPTION_3:
+						if (true)
+                        {
+							string msg = DecryptText(protocolSI.GetStringFromData());
+							UserOption3(msg);
+						}
 						break;
 				}
 			}
 		}
 
-		private void btEnviar_Click(object sender, EventArgs e)
+		private void UserOption1(string option)
         {
+			switch (option)
+			{
+				case "success":
+					autenticated = true;
+					tbChat.Invoke((Action)delegate
+					{
+						tbChat.AppendText(string.Format("Autenticação bem sucedida!{0}", Environment.NewLine));
+					});
+					tbSala.Invoke((Action)delegate
+					{
+						tbSala.Enabled = true;
+					});
+					btAutenticar.Invoke((Action)delegate
+					{
+						btAutenticar.Enabled = true;
+						btAutenticar.Text = "Jogar";
+					});
+					break;
+				case "already":
+					tbChat.Invoke((Action)delegate
+					{
+						tbChat.AppendText(string.Format("A conta que está a tentar usar está autenticada neste momento noutro PC.{0}", Environment.NewLine));
+					});
+					btAutenticar.Invoke((Action)delegate
+					{
+						btAutenticar.Enabled = true;
+					});
+					tbJogador.Invoke((Action)delegate
+					{
+						tbJogador.Enabled = true;
+						tbJogador.Text = "";
+					});
+					tbPassword.Invoke((Action)delegate
+					{
+						tbPassword.Enabled = true;
+						tbPassword.Text = "";
+					});
+					break;
+				case "wrong":
+					tbChat.Invoke((Action)delegate
+					{
+						tbChat.AppendText(string.Format("Autenticação falhada.{0}As credenciais fornecidas estão erradas.{0}", Environment.NewLine));
+					});
+					btAutenticar.Invoke((Action)delegate
+					{
+						btAutenticar.Enabled = true;
+					});
+					tbJogador.Invoke((Action)delegate
+					{
+						tbJogador.Enabled = true;
+					});
+					tbPassword.Invoke((Action)delegate
+					{
+						tbPassword.Enabled = true;
+					});
+					break;
+			}
+		}
+
+		private void UserOption2(string option)
+        {
+			switch (option)
+			{
+				case "empty":
+					tbChat.Invoke((Action)delegate
+					{
+						tbChat.Text = "";
+						tbChat.AppendText(string.Format("Criou a sala!{0}Partilhe o nome da sala para alguém se juntar!{0}", Environment.NewLine));
+					});
+					btAutenticar.Invoke((Action)delegate
+					{
+						btAutenticar.Enabled = true;
+					});
+					tbSala.Invoke((Action)delegate
+					{
+						tbSala.Enabled = true;
+					});
+					btEnviar.Invoke((Action)delegate
+					{
+						btEnviar.Enabled = true;
+					});
+					tbMensagem.Invoke((Action)delegate
+					{
+						tbMensagem.Enabled = true;
+					});
+					break;
+				case "join":
+					tbChat.Invoke((Action)delegate
+					{
+						tbChat.Text = "";
+					});
+					btAutenticar.Invoke((Action)delegate
+					{
+						btAutenticar.Enabled = true;
+					});
+					tbSala.Invoke((Action)delegate
+					{
+						tbSala.Enabled = true;
+					});
+					btEnviar.Invoke((Action)delegate
+					{
+						btEnviar.Enabled = true;
+					});
+					tbMensagem.Invoke((Action)delegate
+					{
+						tbMensagem.Enabled = true;
+					});
+					break;
+				case "full":
+					tbChat.Invoke((Action)delegate
+					{
+						tbChat.Text = "";
+						tbChat.AppendText(string.Format("A sala está cheia.{0}Tente outra sala ou espere que esta fique disponivel!{0}", Environment.NewLine));
+					});
+					btAutenticar.Invoke((Action)delegate
+					{
+						btAutenticar.Enabled = true;
+					});
+					tbSala.Invoke((Action)delegate
+					{
+						tbSala.Enabled = true;
+					});
+					break;
+			}
+		}
+
+		private void UserOption3(string msg)
+        {
+			tbChat.Invoke((Action)delegate
+			{
+				tbChat.AppendText(msg + Environment.NewLine);
+			});
+		}
+
+		private void btEnviar_Click(object sender, EventArgs e)
+		{
 			//Enviar mensagem de cliente para servidor
-			string msg = tbMensagem.Text;
+			string encryptedtext = EncryptText(tbMensagem.Text);
 			tbMensagem.Clear();
 			// ProtocolSICmdTyp. - interpreta o tipo de mensagem/pacote recebido
 			// protocolSI.Make() - cria uma mensagem/pacote de um tipo específico
-			byte[] packet = protocolSI.Make(ProtocolSICmdType.DATA, msg);
+			byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_3, encryptedtext);
 			// ENVIAR A MENSAGEM PELA LIGAÇÃO
 			networkStream.Write(packet, 0, packet.Length);
 		}
 
-        private void FormClient1_FormClosing(object sender, FormClosingEventArgs e)
+		private void btAutenticar_Click(object sender, EventArgs e)
 		{
-			thread.Abort();
-			//EOT - End Of Transmission
-			byte[] eot = protocolSI.Make(ProtocolSICmdType.EOT);
-			networkStream.Write(eot, 0, eot.Length);
-			//Fechar todas as ligações
-			networkStream.Close();
-			client.Close();
-		}
-
-        private void btAutenticar_Click(object sender, EventArgs e)
-        {
 			tbChat.Text = "";
-            if (!autenticated)
-            {
-				string username = tbJogador.Text;
-				string pwd = tbPassword.Text;
-				
-				string encryptedusername = EncryptText(username);
-				string encryptedpwd = EncryptText(pwd);
+			if (!autenticated)
+			{
+				btAutenticar.Enabled = false;
+				tbJogador.Enabled = false;
+				tbPassword.Enabled = false;
+				string encryptedusername = EncryptText(tbJogador.Text);
+				string encryptedpwd = EncryptText(tbPassword.Text);
 
 				string bytestring = encryptedusername + " " + encryptedpwd;
 				byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_1, bytestring);
 				networkStream.Write(packet, 0, packet.Length);
-
-				networkStream.Read(protocolSI.Buffer, 0, protocolSI.Buffer.Length);
-				string option = DecryptText(protocolSI.GetStringFromData());
-				switch (option)
-				{
-					case "success":
-						autenticated = true;
-						tbJogador.Enabled = false;
-						tbPassword.Enabled = false;
-						tbSala.Enabled = true;
-						btAutenticar.Text = "Jogar";
-						tbChat.AppendText(string.Format("Autenticação bem sucedida!{0}{0}", Environment.NewLine));
-						break;
-					case "already":
-						tbJogador.Text = "";
-						tbPassword.Text = "";
-						tbChat.AppendText(string.Format("A conta que está a tentar usar está autenticada neste momento noutro PC.{0}{0}", Environment.NewLine));
-						break;
-					case "wrong":
-						tbChat.AppendText(string.Format("Autenticação falhada.{0}As credenciais fornecidas estão erradas.{0}{0}", Environment.NewLine));
-						break;
-				}
-            }
-            else
-            {
-				string room = tbSala.Text;
-
-				string encryptedroom = EncryptText(room);
+			}
+			else
+			{
+				btEnviar.Enabled = false;
+				tbMensagem.Enabled = false;
+				btAutenticar.Enabled = false;
+				tbSala.Enabled = false;
+				string encryptedroom = EncryptText(tbSala.Text);
 				byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_2, encryptedroom);
 				networkStream.Write(packet, 0, packet.Length);
-
-				networkStream.Read(protocolSI.Buffer, 0, protocolSI.Buffer.Length);
-				string option = DecryptText(protocolSI.GetStringFromData());
-				switch (option)
-				{
-					case "empty":
-						tbChat.AppendText(string.Format("Criou a sala {0}!{1}Partilhe o nome da sala para alguém se juntar!{1}{1}", room, Environment.NewLine));
-						break;
-					case "join":
-						tbChat.AppendText(string.Format("Juntou-se à sala {0}!{1}{1}", room, Environment.NewLine));
-						break;
-					case "full":
-						tbChat.AppendText(string.Format("A sala {0} está cheia.{1}Tente outra sala ou espere que esta fique vazia!{1}{1}", room, Environment.NewLine));
-						break;
-				}
 			}
-        }
+		}
 
-		public string DecryptText(string txt)
+		/// <summary>
+		/// Desencripta uma string
+		/// </summary>
+		/// <param name="Texto para desencriptar"></param>
+		/// <returns>String com texto desencriptado</returns>
+		private string DecryptText(string txt)
 		{
 			//VARIÁVEL PARA GUARDAR O TEXTO CIFRADO EM BYTES
 			byte[] txtCifrado = Convert.FromBase64String(txt);
@@ -191,8 +299,13 @@ namespace ProjetoFinalTopSeg
 			return textoDecifrado;
 		}
 
+		/// <summary>
+		/// Encripta uma string
+		/// </summary>
+		/// <param name="Texto para encriptar"></param>
+		/// <returns>String com texto encriptado</returns>
 		private string EncryptText(string text)
-        {
+		{
 			//VARIÁVEL PARA GUARDAR O TEXTO DECIFRADO EM BYTES
 			byte[] txtDecifrado = Encoding.UTF8.GetBytes(text);
 			//VARIÁVEL PARA GUARDAR O TEXTO CIFRADO EM BYTES
@@ -210,6 +323,17 @@ namespace ProjetoFinalTopSeg
 			string txtCifradoB64 = Convert.ToBase64String(txtCifrado);
 			//DEVOLVER OS BYTES CRIADOS EM BASE64
 			return txtCifradoB64;
+		}
+
+		private void FormClient1_FormClosing(object sender, FormClosingEventArgs e)
+		{
+			thread.Abort();
+			//EOT - End Of Transmission
+			byte[] eot = protocolSI.Make(ProtocolSICmdType.EOT);
+			networkStream.Write(eot, 0, eot.Length);
+			//Fechar todas as ligações
+			networkStream.Close();
+			client.Close();
 		}
 	}
 }

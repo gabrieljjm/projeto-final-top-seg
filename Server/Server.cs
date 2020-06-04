@@ -33,6 +33,9 @@ namespace Server
 			// INSERIR USER NA BASE DE DADOS
 			//InsertUser();
 
+			// GERAR UM CLIENTE FALSO
+			//FakeClient();
+
 			// CRIAR UM CONJUNTO IP+PORTA DO CLIENTE
 			IPEndPoint endpoint = new IPEndPoint(IPAddress.Any, PORT);
 
@@ -94,101 +97,133 @@ namespace Server
                 switch (protocolSI.GetCmdType())
                 {
 					case ProtocolSICmdType.USER_OPTION_1:
-						string combo = protocolSI.GetStringFromData();
-						string[] arraycombo = combo.Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
-						//string room = Decrypt(arraycombo[0], pos);
-                        string username = DecryptText(arraycombo[0], pos);
-                        string pwd = DecryptText(arraycombo[1], pos);
+                        if (true)
+                        {
+							string combo = protocolSI.GetStringFromData();
+							string[] arraycombo = combo.Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+							//string room = Decrypt(arraycombo[0], pos);
+							string username = DecryptText(arraycombo[0], pos);
+							string pwd = DecryptText(arraycombo[1], pos);
 
-						string codword;
-						if (VerifyLogin(username, pwd))
-						{
-							while (loginqueue) { }
-							loginqueue = true;
-							if (!ListPlayerName.Contains(username))
+							string codword;
+							if (VerifyLogin(username, pwd))
 							{
-								// user autenticado
-								ListPlayerName[pos] = username;
-								loginqueue = false;
-								codword = EncryptText("success", pos);
-								byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_1, codword);
-								networkStream.Write(packet, 0, packet.Length);
+								//while (loginqueue) { }
+								//loginqueue = true;
+								if (!ListPlayerName.Contains(username))
+								{
+									// user autenticado
+									ListPlayerName[pos] = username;
+									//loginqueue = false;
+									codword = EncryptText("success", pos);
+									byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_1, codword);
+									networkStream.Write(packet, 0, packet.Length);
+								}
+								else
+								{
+									// user já foi logado noutro client
+									//loginqueue = false;
+									codword = EncryptText("already", pos);
+									byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_1, codword);
+									networkStream.Write(packet, 0, packet.Length);
+								}
 							}
 							else
 							{
-								// user já foi logado noutro client
-								loginqueue = false;
-								codword = EncryptText("already", pos);
+								// login errado
+								codword = EncryptText("wrong", pos);
 								byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_1, codword);
 								networkStream.Write(packet, 0, packet.Length);
 							}
-						}
-						else
-						{
-							// login errado
-							codword = EncryptText("wrong", pos);
-							byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_1, codword);
-							networkStream.Write(packet, 0, packet.Length);
 						}
 						break;
 
 					case ProtocolSICmdType.USER_OPTION_2:
-						string room = DecryptText(protocolSI.GetStringFromData(), pos);
+                        if (true)
+                        {
+							string room = DecryptText(protocolSI.GetStringFromData(), pos);
+							//while (roomqueue) { }
+							//roomqueue = true;
+							int count = 0;
+							foreach (var rm in ListRoom)
+							{
+								if (rm.Equals(room))
+								{
 
-						while (roomqueue) { }
-						roomqueue = true;
-						ListRoom[pos] = "";
-						int count = 0;
-						foreach (var rm in ListRoom)
-						{
-							if (rm.Equals(room))
-							{
-								count++;
+									count++;
+								}
 							}
-						}
-						if (count == 0)
-						{
-							// user cria uma sala
-							ListRoom[pos] = room;
-							roomqueue = false;
-							codword = EncryptText("empty", pos);
-							byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_2, codword);
-							networkStream.Write(packet, 0, packet.Length);
-							msg = ListPlayerName[pos] + " criou a sala " + room;
-							BroadcastMessageRoom(msg, room);
-						}
-						else
-						{
-							if (count == 1)
+							if (ListRoom[pos].Equals(room))
 							{
-								// user junta-se a uma sala
+								count--;
+							}
+							string codword;
+							if (count == 0)
+							{
+								// user cria uma sala
 								ListRoom[pos] = room;
-								roomqueue = false;
-								codword = EncryptText("join", pos);
+								//roomqueue = false;
+								codword = EncryptText("empty", pos);
 								byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_2, codword);
 								networkStream.Write(packet, 0, packet.Length);
-								msg = ListPlayerName[pos] + " juntou-se à sala " + room;
-								BroadcastMessageRoom(msg, room);
 							}
 							else
 							{
-								// a sala está cheia
-								roomqueue = false;
-								codword = EncryptText("full", pos);
-								byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_2, codword);
-								networkStream.Write(packet, 0, packet.Length);
+								if (count == 1)
+								{
+									codword = EncryptText("join", pos);
+									byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_2, codword);
+									networkStream.Write(packet, 0, packet.Length);
+									// user junta-se a uma sala
+									if (!ListRoom[pos].Equals(""))
+									{
+										msg = ListPlayerName[pos] + " abandonou a sala!";
+										BroadcastMessageRoom(msg, ListRoom[pos]);
+									}
+									ListRoom[pos] = room;
+									//roomqueue = false;
+									msg = ListPlayerName[pos] + " juntou-se à sala!";
+									msg = string.Format("**{0} juntou-se à sala**", ListPlayerName[pos]);
+
+									BroadcastMessageRoom(msg, ListRoom[pos]);
+								}
+								else
+								{
+									codword = EncryptText("full", pos);
+									byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_2, codword);
+									networkStream.Write(packet, 0, packet.Length);
+									// a sala está cheia
+									if (!ListRoom[pos].Equals(""))
+                                    {
+										msg = string.Format("**{0} abandonou a sala**", ListPlayerName[pos]);
+										BroadcastMessageRoom(msg, ListRoom[pos]);
+									}
+									ListRoom[pos] = "";
+									//roomqueue = false;
+								}
 							}
 						}
 						break;
+					case ProtocolSICmdType.USER_OPTION_3:
+                        if (true)
+                        {
+							string text = DecryptText(protocolSI.GetStringFromData(), pos);
+							msg = string.Format("{0}: {1}", ListPlayerName[pos], text);
+							BroadcastMessageRoom(msg, ListRoom[pos]);
+						}
+						break;
 					case ProtocolSICmdType.EOT:
-						codword = (ListPlayerName[ListTcpClient.IndexOf(tcpClient)] + " disconnected");
-						//File.AppendAllText(path, msg + Environment.NewLine, Encoding.UTF8);
-						//BroadcastMessage(codword, room);
-						Console.WriteLine(codword);
-						networkStream.Close();
-						tcpClient.Close();
-						ListPlayerName.RemoveAt(ListTcpClient.IndexOf(tcpClient));
-						ListTcpClient.Remove(tcpClient);
+                        if (true)
+                        {
+							msg = (ListPlayerName[ListTcpClient.IndexOf(tcpClient)] + " disconnected");
+							//File.AppendAllText(path, msg + Environment.NewLine, Encoding.UTF8);
+							//BroadcastMessage(codword, room);
+							Console.WriteLine(msg);
+							networkStream.Close();
+							tcpClient.Close();
+							ListPlayerName.RemoveAt(ListTcpClient.IndexOf(tcpClient));
+							ListTcpClient.Remove(tcpClient);
+                        }
 						break;
 
 				}
@@ -203,12 +238,18 @@ namespace Server
                 {
 					NetworkStream networkStream = ListTcpClient[i].GetStream();
 					ProtocolSI protocolSI = new ProtocolSI();
-					byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_2, msg);
+					byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_3, EncryptText(msg, i));
 					networkStream.Write(packet, 0, packet.Length);
 				}
             }
 		}
 
+		/// <summary>
+		/// Desencripta uma string
+		/// </summary>
+		/// <param name="Texto para desencriptar"></param>
+		/// <param name="Posição da AesCryptoServiceProvider"></param>
+		/// <returns>String com texto desencriptado</returns>
 		public static string DecryptText(string txt, int pos)
 		{
 			AesCryptoServiceProvider aes = ListAes[pos];
@@ -230,6 +271,12 @@ namespace Server
 			return textoDecifrado;
 		}
 
+		/// <summary>
+		/// Encripta uma string
+		/// </summary>
+		/// <param name="Texto para encriptar"></param>
+		/// <param name="Posição da AesCryptoServiceProvider"></param>
+		/// <returns>String com texto encriptado</returns>
 		private static string EncryptText(string text, int pos)
 		{
 			AesCryptoServiceProvider aes = ListAes[pos];
@@ -252,6 +299,12 @@ namespace Server
 			return txtCifradoB64;
 		}
 
+		/// <summary>
+		/// Verifica o login
+		/// </summary>
+		/// <param name="Nome de Utilizador desencriptado"></param>
+		/// <param name="Palavra-passe desencriptada"></param>
+		/// <returns>True ou False</returns>
 		public static bool VerifyLogin(string username, string password)
 		{
 			try
@@ -310,6 +363,15 @@ namespace Server
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+		public static void FakeClient()
+        {
+			TcpClient tcpClient = new TcpClient();
+			ListTcpClient.Add(tcpClient);
+			AesCryptoServiceProvider aes = new AesCryptoServiceProvider();
+			ListAes.Add(aes);
+			ListPlayerName.Add("AAAA");
+			ListRoom.Add("B");
+		}
 
 		/// <summary>
 		/// Insert user in database just for testing
@@ -323,8 +385,8 @@ namespace Server
 			//string finalpath = path + "\\ServerDB.mdf";
 			string finalpath = @"C:\Users\gaabr\Documents\Git\projeto-final-top-seg\Server\ServerDB.mdf";
 
-			string username = "Francisco";//Alterar para inserir um username diferente (alterar sempre pois o username é UNIQUE)
-			string password = "123abc456";//Alterar para inserir uma password diferente
+			string username = "qwe";//Alterar para inserir um username diferente (alterar sempre pois o username é UNIQUE)
+			string password = "123";//Alterar para inserir uma password diferente
 			byte[] salt = GenerateSalt(SALTSIZE);
 			byte[] saltedPasswordHash = GenerateSaltedHash(password, salt);
 

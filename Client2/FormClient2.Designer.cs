@@ -152,6 +152,7 @@
             this.tbChat.Multiline = true;
             this.tbChat.Name = "tbChat";
             this.tbChat.ReadOnly = true;
+            this.tbChat.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.tbChat.Size = new System.Drawing.Size(259, 186);
             this.tbChat.TabIndex = 39;
             // 
