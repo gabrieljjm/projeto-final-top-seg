@@ -25,6 +25,7 @@ namespace Client2
 		private TcpClient client;
 		private Thread thread;
 		private bool autenticated = false;
+		private string currentRoom = "";
 
 		public FormClient2()
 		{
@@ -104,55 +105,31 @@ namespace Client2
 			{
 				case "success":
 					autenticated = true;
-					tbChat.Invoke((Action)delegate
+					Invoke((Action)delegate
 					{
-						tbChat.AppendText(string.Format("Autenticação bem sucedida!{0}", Environment.NewLine));
-					});
-					tbSala.Invoke((Action)delegate
-					{
+						tbChat.AppendText(string.Format("**autenticação bem sucedida**"));
 						tbSala.Enabled = true;
-					});
-					btAutenticar.Invoke((Action)delegate
-					{
 						btAutenticar.Enabled = true;
 						btAutenticar.Text = "Jogar";
 					});
 					break;
 				case "already":
-					tbChat.Invoke((Action)delegate
+					Invoke((Action)delegate
 					{
-						tbChat.AppendText(string.Format("A conta que está a tentar usar está autenticada neste momento noutro PC.{0}", Environment.NewLine));
-					});
-					btAutenticar.Invoke((Action)delegate
-					{
+						tbChat.AppendText(string.Format("**autenticação falhada**{0}**conta em uso**", Environment.NewLine));
 						btAutenticar.Enabled = true;
-					});
-					tbJogador.Invoke((Action)delegate
-					{
 						tbJogador.Enabled = true;
 						tbJogador.Text = "";
-					});
-					tbPassword.Invoke((Action)delegate
-					{
 						tbPassword.Enabled = true;
 						tbPassword.Text = "";
 					});
 					break;
 				case "wrong":
-					tbChat.Invoke((Action)delegate
+					Invoke((Action)delegate
 					{
-						tbChat.AppendText(string.Format("Autenticação falhada.{0}As credenciais fornecidas estão erradas.{0}", Environment.NewLine));
-					});
-					btAutenticar.Invoke((Action)delegate
-					{
+						tbChat.AppendText(string.Format("**autenticação falhada**{0}**as credenciais fornecidas estão erradas**", Environment.NewLine));
 						btAutenticar.Enabled = true;
-					});
-					tbJogador.Invoke((Action)delegate
-					{
 						tbJogador.Enabled = true;
-					});
-					tbPassword.Invoke((Action)delegate
-					{
 						tbPassword.Enabled = true;
 					});
 					break;
@@ -164,62 +141,33 @@ namespace Client2
 			switch (option)
 			{
 				case "empty":
-					tbChat.Invoke((Action)delegate
+					Invoke((Action)delegate
 					{
 						tbChat.Text = "";
-						tbChat.AppendText(string.Format("Criou a sala!{0}Partilhe o nome da sala para alguém se juntar!{0}", Environment.NewLine));
-					});
-					btAutenticar.Invoke((Action)delegate
-					{
+						tbChat.AppendText(string.Format("**você criou a sala**{0}", Environment.NewLine));
 						btAutenticar.Enabled = true;
-					});
-					tbSala.Invoke((Action)delegate
-					{
 						tbSala.Enabled = true;
-					});
-					btEnviar.Invoke((Action)delegate
-					{
 						btEnviar.Enabled = true;
-					});
-					tbMensagem.Invoke((Action)delegate
-					{
 						tbMensagem.Enabled = true;
 					});
 					break;
 				case "join":
-					tbChat.Invoke((Action)delegate
+					Invoke((Action)delegate
 					{
 						tbChat.Text = "";
-					});
-					btAutenticar.Invoke((Action)delegate
-					{
 						btAutenticar.Enabled = true;
-					});
-					tbSala.Invoke((Action)delegate
-					{
 						tbSala.Enabled = true;
-					});
-					btEnviar.Invoke((Action)delegate
-					{
 						btEnviar.Enabled = true;
-					});
-					tbMensagem.Invoke((Action)delegate
-					{
 						tbMensagem.Enabled = true;
 					});
 					break;
 				case "full":
-					tbChat.Invoke((Action)delegate
+					Invoke((Action)delegate
 					{
 						tbChat.Text = "";
-						tbChat.AppendText(string.Format("A sala está cheia.{0}Tente outra sala ou espere que esta fique disponivel!{0}", Environment.NewLine));
-					});
-					btAutenticar.Invoke((Action)delegate
-					{
+						tbChat.AppendText(string.Format("**a sala está cheia**", Environment.NewLine));
+						currentRoom = "";
 						btAutenticar.Enabled = true;
-					});
-					tbSala.Invoke((Action)delegate
-					{
 						tbSala.Enabled = true;
 					});
 					break;
@@ -228,22 +176,27 @@ namespace Client2
 
 		private void UserOption3(string msg)
 		{
-			tbChat.Invoke((Action)delegate
+			Invoke((Action)delegate
 			{
 				tbChat.AppendText(msg + Environment.NewLine);
 			});
+			//byte[] packet = protocolSI.Make(ProtocolSICmdType.DATA);
+			//networkStream.Write(packet, 0, packet.Length);
 		}
 
 		private void btEnviar_Click(object sender, EventArgs e)
 		{
-			//Enviar mensagem de cliente para servidor
-			string encryptedtext = EncryptText(tbMensagem.Text);
-			tbMensagem.Clear();
-			// ProtocolSICmdTyp. - interpreta o tipo de mensagem/pacote recebido
-			// protocolSI.Make() - cria uma mensagem/pacote de um tipo específico
-			byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_3, encryptedtext);
-			// ENVIAR A MENSAGEM PELA LIGAÇÃO
-			networkStream.Write(packet, 0, packet.Length);
+			if (tbMensagem.Text.Equals(""))
+			{
+				//Enviar mensagem de cliente para servidor
+				string encryptedtext = EncryptText(tbMensagem.Text.Trim());
+				tbMensagem.Clear();
+				// ProtocolSICmdTyp. - interpreta o tipo de mensagem/pacote recebido
+				// protocolSI.Make() - cria uma mensagem/pacote de um tipo específico
+				byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_3, encryptedtext);
+				// ENVIAR A MENSAGEM PELA LIGAÇÃO
+				networkStream.Write(packet, 0, packet.Length);
+			}
 		}
 
 		private void btAutenticar_Click(object sender, EventArgs e)
@@ -251,27 +204,65 @@ namespace Client2
 			tbChat.Text = "";
 			if (!autenticated)
 			{
-				btAutenticar.Enabled = false;
-				tbJogador.Enabled = false;
-				tbPassword.Enabled = false;
-				string encryptedusername = EncryptText(tbJogador.Text);
-				string encryptedpwd = EncryptText(tbPassword.Text);
+				if (!tbJogador.Text.Equals("") && !tbPassword.Text.Equals(""))
+				{
+					if (!tbJogador.Text.Contains(" ") || !tbPassword.Text.Contains(" "))
+					{
+						btAutenticar.Enabled = false;
+						tbJogador.Enabled = false;
+						tbPassword.Enabled = false;
+						string encryptedusername = EncryptText(tbJogador.Text);
+						string encryptedpwd = EncryptText(tbPassword.Text);
 
-				string bytestring = encryptedusername + " " + encryptedpwd;
-				byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_1, bytestring);
-				networkStream.Write(packet, 0, packet.Length);
+						string bytestring = encryptedusername + " " + encryptedpwd;
+						byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_1, bytestring);
+						networkStream.Write(packet, 0, packet.Length);
+					}
+					else
+					{
+						MessageBox.Show("O nome de jogador e a password não podem ter espaços!");
+					}
+				}
+				else
+				{
+					MessageBox.Show("Preencha os campos todos!");
+				}
 			}
 			else
 			{
-				btEnviar.Enabled = false;
-				tbMensagem.Enabled = false;
-				btAutenticar.Enabled = false;
-				tbSala.Enabled = false;
-				string encryptedroom = EncryptText(tbSala.Text);
-				byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_2, encryptedroom);
-				networkStream.Write(packet, 0, packet.Length);
+				if (!tbSala.Text.Equals(""))
+				{
+					if (!tbSala.Text.Contains(" "))
+					{
+						if (!tbSala.Text.Equals(currentRoom))
+						{
+							btEnviar.Enabled = false;
+							tbMensagem.Enabled = false;
+							btAutenticar.Enabled = false;
+							tbSala.Enabled = false;
+							currentRoom = tbSala.Text;
+
+							string encryptedroom = EncryptText(tbSala.Text);
+							byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_2, encryptedroom);
+							networkStream.Write(packet, 0, packet.Length);
+						}
+						else
+						{
+							MessageBox.Show("Insira uma sala diferente da atual!");
+						}
+					}
+					else
+					{
+						MessageBox.Show("A sala não pode ter espaços!");
+					}
+				}
+				else
+				{
+					MessageBox.Show("Insira uma sala!");
+				}
 			}
 		}
+
 
 		/// <summary>
 		/// Desencripta uma string

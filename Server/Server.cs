@@ -149,55 +149,56 @@ namespace Server
 							{
 								if (rm.Equals(room))
 								{
-
 									count++;
 								}
-							}
-							if (ListRoom[pos].Equals(room))
-							{
-								count--;
 							}
 							string codword;
 							if (count == 0)
 							{
-								// user cria uma sala
-								ListRoom[pos] = room;
+								// Se saiu de uma sala avisa quem estava nela
+								if (!ListRoom[pos].Equals(""))
+								{
+									msg = string.Format("**{0} abandonou a sala**", ListPlayerName[pos]);
+									BroadcastMessageRoom(msg, pos);
+								}
+								// User cria uma sala
 								//roomqueue = false;
 								codword = EncryptText("empty", pos);
 								byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_2, codword);
 								networkStream.Write(packet, 0, packet.Length);
+								ListRoom[pos] = room;
 							}
 							else
 							{
 								if (count == 1)
 								{
+									// Se saiu de uma sala avisa quem estava nela
+									if (!ListRoom[pos].Equals(""))
+									{
+										msg = string.Format("**{0} abandonou a sala**", ListPlayerName[pos]);
+										BroadcastMessageRoom(msg, pos);
+									}
+									// User junta-se a uma sala
 									codword = EncryptText("join", pos);
 									byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_2, codword);
 									networkStream.Write(packet, 0, packet.Length);
-									// user junta-se a uma sala
-									if (!ListRoom[pos].Equals(""))
-									{
-										msg = ListPlayerName[pos] + " abandonou a sala!";
-										BroadcastMessageRoom(msg, ListRoom[pos]);
-									}
 									ListRoom[pos] = room;
 									//roomqueue = false;
-									msg = ListPlayerName[pos] + " juntou-se à sala!";
 									msg = string.Format("**{0} juntou-se à sala**", ListPlayerName[pos]);
-
-									BroadcastMessageRoom(msg, ListRoom[pos]);
+									BroadcastMessageRoom(msg, pos);
 								}
 								else
 								{
+									// Se saiu de uma sala avisa quem estava nela
+									if (!ListRoom[pos].Equals(""))
+									{
+										msg = string.Format("**{0} abandonou a sala**", ListPlayerName[pos]);
+										BroadcastMessageRoom(msg, pos);
+									}
+									// A sala está cheia
 									codword = EncryptText("full", pos);
 									byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_2, codword);
 									networkStream.Write(packet, 0, packet.Length);
-									// a sala está cheia
-									if (!ListRoom[pos].Equals(""))
-                                    {
-										msg = string.Format("**{0} abandonou a sala**", ListPlayerName[pos]);
-										BroadcastMessageRoom(msg, ListRoom[pos]);
-									}
 									ListRoom[pos] = "";
 									//roomqueue = false;
 								}
@@ -209,7 +210,7 @@ namespace Server
                         {
 							string text = DecryptText(protocolSI.GetStringFromData(), pos);
 							msg = string.Format("{0}: {1}", ListPlayerName[pos], text);
-							BroadcastMessageRoom(msg, ListRoom[pos]);
+							BroadcastMessageRoom(msg, pos);
 						}
 						break;
 					case ProtocolSICmdType.EOT:
@@ -225,23 +226,32 @@ namespace Server
 							ListTcpClient.Remove(tcpClient);
                         }
 						break;
-
 				}
 			}
 		}
 
-		public static void BroadcastMessageRoom(string msg ,string room)
+		public static void BroadcastMessageRoom(string msg ,int pos)
 		{
-            for (int i = 0; i < ListRoom.Count(); i++)
+			Console.WriteLine("BROADCAST STARTED " + ListRoom[pos]);
+			Console.WriteLine();
+
+			foreach (TcpClient item in ListTcpClient)
             {
-                if (ListRoom[i].Equals(room))
+                if (ListRoom[ListTcpClient.IndexOf(item)].Equals(ListRoom[pos]))
                 {
-					NetworkStream networkStream = ListTcpClient[i].GetStream();
+					Console.WriteLine(ListPlayerName[ListTcpClient.IndexOf(item)]);
+					Console.WriteLine(ListRoom[ListTcpClient.IndexOf(item)]);
+					Console.WriteLine(msg);
+					Console.WriteLine();
+					NetworkStream networkStream = item.GetStream();
 					ProtocolSI protocolSI = new ProtocolSI();
-					byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_3, EncryptText(msg, i));
+					byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_3, EncryptText(msg, ListTcpClient.IndexOf(item)));
 					networkStream.Write(packet, 0, packet.Length);
 				}
             }
+			Console.WriteLine("BROADCAST ENDED");
+			Console.WriteLine();
+			Console.WriteLine();
 		}
 
 		/// <summary>
