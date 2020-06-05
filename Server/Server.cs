@@ -241,6 +241,11 @@ namespace Server
 			}
 		}
 
+		/// <summary>
+		/// Envia o estado do jogo para o jogador que vai jogar a seguir
+		/// </summary>
+		/// <param name="msg"></param>
+		/// <param name="pos"></param>
 		public static void BroadcastGame(string msg,int pos)
         {
 			foreach (TcpClient item in ListTcpClient)
@@ -255,6 +260,11 @@ namespace Server
 			}
 		}
 
+		/// <summary>
+		/// Envia o Resultado Final do Jogo para os partecipantes
+		/// </summary>
+		/// <param name="msg"></param>
+		/// <param name="pos"></param>
 		public static void BroadcastResult(string msg, int pos)
         {
 			byte[] packet;
@@ -277,6 +287,11 @@ namespace Server
 			}
 		}
 
+		/// <summary>
+		/// Verifica o estado do jogo, se alguem ja ganhou ou se ja empataram
+		/// </summary>
+		/// <param name="arraycombo"></param>
+		/// <returns></returns>
 		public static string CheckGame(string[] arraycombo)
         {
 			string currentplayer = arraycombo[0];
@@ -360,6 +375,11 @@ namespace Server
 			return "";
 		}
 
+		/// <summary>
+		/// Envia a mensgaem no chat para os membros da sala
+		/// </summary>
+		/// <param name="msg"></param>
+		/// <param name="pos"></param>
 		public static void BroadcastMessageRoom(string msg, int pos)
 		{
 			foreach (TcpClient item in ListTcpClient)

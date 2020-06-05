@@ -192,6 +192,32 @@ namespace Client2
 						lbWins1.Text = "0";
 						lbWins2.Text = "";
 						lbEmpates.Text = "0";
+						panel1.Enabled = false;
+						button1.Enabled = true;
+						button2.Enabled = true;
+						button3.Enabled = true;
+						button4.Enabled = true;
+						button5.Enabled = true;
+						button6.Enabled = true;
+						button7.Enabled = true;
+						button8.Enabled = true;
+						button9.Enabled = true;
+
+						button1.Text = "";
+						button2.Text = "";
+						button3.Text = "";
+						button4.Text = "";
+						button5.Text = "";
+						button6.Text = "";
+						button7.Text = "";
+						button8.Text = "";
+						button9.Text = "";
+
+						lbJogador1.Text = tbJogador.Text;
+						lbJogador2.Text = "";
+						lbWins1.Text = "0";
+						lbWins2.Text = "";
+						lbEmpates.Text = "0";
 					});
 					break;
 				case "join":
