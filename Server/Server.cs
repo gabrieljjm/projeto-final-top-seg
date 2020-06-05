@@ -142,8 +142,7 @@ namespace Server
                         if (true)
                         {
 							string room = DecryptText(protocolSI.GetStringFromData(), pos);
-							//while (roomqueue) { }
-							//roomqueue = true;
+							msg = ListPlayerName[pos];
 							int count = 0;
 							foreach (var rm in ListRoom)
 							{
@@ -158,11 +157,9 @@ namespace Server
 								// Se saiu de uma sala avisa quem estava nela
 								if (!ListRoom[pos].Equals(""))
 								{
-									msg = string.Format("**{0} abandonou a sala**", ListPlayerName[pos]);
-									BroadcastMessageRoom(msg, pos);
+									BroadcastLeftRoom(msg, pos);
 								}
 								// User cria uma sala
-								//roomqueue = false;
 								codword = EncryptText("empty", pos);
 								byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_2, codword);
 								networkStream.Write(packet, 0, packet.Length);
@@ -175,32 +172,28 @@ namespace Server
 									// Se saiu de uma sala avisa quem estava nela
 									if (!ListRoom[pos].Equals(""))
 									{
-										msg = string.Format("**{0} abandonou a sala**", ListPlayerName[pos]);
-										BroadcastMessageRoom(msg, pos);
+										BroadcastLeftRoom(msg, pos);
 									}
 									// User junta-se a uma sala
 									codword = EncryptText("join", pos);
 									byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_2, codword);
 									networkStream.Write(packet, 0, packet.Length);
 									ListRoom[pos] = room;
-									//roomqueue = false;
-									msg = string.Format("**{0} juntou-se à sala**", ListPlayerName[pos]);
-									BroadcastMessageRoom(msg, pos);
+
+									BroadcastJoinedRoom(msg, pos);
 								}
 								else
 								{
 									// Se saiu de uma sala avisa quem estava nela
 									if (!ListRoom[pos].Equals(""))
 									{
-										msg = string.Format("**{0} abandonou a sala**", ListPlayerName[pos]);
-										BroadcastMessageRoom(msg, pos);
+										BroadcastLeftRoom(msg, pos);
 									}
 									// A sala está cheia
 									codword = EncryptText("full", pos);
 									byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_2, codword);
 									networkStream.Write(packet, 0, packet.Length);
 									ListRoom[pos] = "";
-									//roomqueue = false;
 								}
 							}
 						}
@@ -213,11 +206,29 @@ namespace Server
 							BroadcastMessageRoom(msg, pos);
 						}
 						break;
+					case ProtocolSICmdType.USER_OPTION_7:
+                        if (true)
+                        {
+							string text = DecryptText(protocolSI.GetStringFromData(), pos);
+							string[] arraycombo = text.Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+							switch (CheckGame(arraycombo))
+                            {
+								case "":
+									BroadcastGame(text, pos);
+									break;
+								case "won":
+									BroadcastResult("won", pos);
+									break;
+								case "tie":
+									BroadcastResult("tie", pos);
+									break;
+                            }
+						}
+						break;
 					case ProtocolSICmdType.EOT:
                         if (true)
                         {
 							msg = (ListPlayerName[ListTcpClient.IndexOf(tcpClient)] + " disconnected");
-							//File.AppendAllText(path, msg + Environment.NewLine, Encoding.UTF8);
 							//BroadcastMessage(codword, room);
 							Console.WriteLine(msg);
 							networkStream.Close();
@@ -230,28 +241,175 @@ namespace Server
 			}
 		}
 
-		public static void BroadcastMessageRoom(string msg ,int pos)
-		{
-			Console.WriteLine("BROADCAST STARTED " + ListRoom[pos]);
-			Console.WriteLine();
-
+		public static void BroadcastGame(string msg,int pos)
+        {
 			foreach (TcpClient item in ListTcpClient)
+			{
+				if (ListRoom[ListTcpClient.IndexOf(item)].Equals(ListRoom[pos]) && ListTcpClient.IndexOf(item) != pos)
+				{
+					NetworkStream networkStream = item.GetStream();
+					ProtocolSI protocolSI = new ProtocolSI();
+					byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_7, EncryptText(msg, ListTcpClient.IndexOf(item)));
+					networkStream.Write(packet, 0, packet.Length);
+				}
+			}
+		}
+
+		public static void BroadcastResult(string msg, int pos)
+        {
+			byte[] packet;
+			foreach (TcpClient item in ListTcpClient)
+			{
+				if (ListRoom[ListTcpClient.IndexOf(item)].Equals(ListRoom[pos]))
+				{
+					NetworkStream networkStream = item.GetStream();
+					ProtocolSI protocolSI = new ProtocolSI();
+                    if (!msg.Equals("tie") && ListTcpClient.IndexOf(item) != pos)
+                    {
+						packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_8, EncryptText("loss", ListTcpClient.IndexOf(item)));
+                    }
+                    else
+                    {
+						packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_8, EncryptText(msg, ListTcpClient.IndexOf(item)));
+					}
+					networkStream.Write(packet, 0, packet.Length);
+				}
+			}
+		}
+
+		public static string CheckGame(string[] arraycombo)
+        {
+			string currentplayer = arraycombo[0];
+
+			for (int i = 0; i < arraycombo.Length; i++)
+			{
+				if (arraycombo[i] == "N")
+					arraycombo[i] = "";
+			}
+
+			string button1 = arraycombo[1];
+			string button2 = arraycombo[2];
+			string button3 = arraycombo[3];
+			string button4 = arraycombo[4];
+			string button5 = arraycombo[5];
+			string button6 = arraycombo[6];
+			string button7 = arraycombo[7];
+			string button8 = arraycombo[8];
+			string button9 = arraycombo[9];
+
+			if (button1 == currentplayer && button5 == currentplayer && button9 == currentplayer)
+			{
+				return "won";
+            }
+            else
             {
-                if (ListRoom[ListTcpClient.IndexOf(item)].Equals(ListRoom[pos]))
+				if (button3 == currentplayer && button5 == currentplayer && button7 == currentplayer)
+				{
+					return "won";
+				}
+                else
                 {
-					Console.WriteLine(ListPlayerName[ListTcpClient.IndexOf(item)]);
-					Console.WriteLine(ListRoom[ListTcpClient.IndexOf(item)]);
-					Console.WriteLine(msg);
-					Console.WriteLine();
+					if (button1 == currentplayer && button2 == currentplayer && button3 == currentplayer)
+					{
+						return "won";
+					}
+                    else
+                    {
+						if (button4 == currentplayer && button5 == currentplayer && button6 == currentplayer)
+						{
+							return "won";
+						}
+                        else
+                        {
+							if (button7 == currentplayer && button8 == currentplayer && button9 == currentplayer)
+							{
+								return "won";
+							}
+                            else
+                            {
+								if (button1 == currentplayer && button4 == currentplayer && button7 == currentplayer)
+								{
+									return "won";
+								}
+                                else
+                                {
+									if (button2 == currentplayer && button5 == currentplayer && button8 == currentplayer)
+									{
+										return "won";
+									}
+                                    else
+                                    {
+										if (button3 == currentplayer && button6 == currentplayer && button9 == currentplayer)
+										{
+											return "won";
+										}
+                                        else
+                                        {
+											if (button1.Length != 0 && button2.Length != 0 && button3.Length != 0 && button4.Length != 0 && button5.Length != 0 && button6.Length != 0 && button7.Length != 0 && button9.Length != 0)
+											{
+												return "tie";
+											}
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+			return "";
+		}
+
+		public static void BroadcastMessageRoom(string msg, int pos)
+		{
+			foreach (TcpClient item in ListTcpClient)
+			{
+				if (ListRoom[ListTcpClient.IndexOf(item)].Equals(ListRoom[pos]))
+				{
 					NetworkStream networkStream = item.GetStream();
 					ProtocolSI protocolSI = new ProtocolSI();
 					byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_3, EncryptText(msg, ListTcpClient.IndexOf(item)));
 					networkStream.Write(packet, 0, packet.Length);
 				}
+			}
+		}
+
+		public static void BroadcastJoinedRoom(string msg, int pos)
+		{
+			string opponent = "";
+			foreach (TcpClient item in ListTcpClient)
+			{
+				if (ListRoom[ListTcpClient.IndexOf(item)].Equals(ListRoom[pos]) && ListTcpClient.IndexOf(item) != pos)
+				{
+					opponent = ListPlayerName[ListTcpClient.IndexOf(item)];
+					NetworkStream networkStream = item.GetStream();
+					ProtocolSI protocolSI = new ProtocolSI();
+					byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_4, EncryptText(msg, ListTcpClient.IndexOf(item)));
+					networkStream.Write(packet, 0, packet.Length);
+				}
+			}
+            if (true)
+            {
+				NetworkStream networkStream = ListTcpClient[pos].GetStream();
+				ProtocolSI protocolSI = new ProtocolSI();
+				byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_6, EncryptText(opponent, pos));
+				networkStream.Write(packet, 0, packet.Length);
             }
-			Console.WriteLine("BROADCAST ENDED");
-			Console.WriteLine();
-			Console.WriteLine();
+		}
+
+		public static void BroadcastLeftRoom(string msg, int pos)
+		{
+			foreach (TcpClient item in ListTcpClient)
+			{
+				if (ListRoom[ListTcpClient.IndexOf(item)].Equals(ListRoom[pos]) && ListTcpClient.IndexOf(item) != pos)
+				{
+
+					NetworkStream networkStream = item.GetStream();
+					ProtocolSI protocolSI = new ProtocolSI();
+					byte[] packet = protocolSI.Make(ProtocolSICmdType.USER_OPTION_5, EncryptText(msg, ListTcpClient.IndexOf(item)));
+					networkStream.Write(packet, 0, packet.Length);
+				}
+			}
 		}
 
 		/// <summary>
